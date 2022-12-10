@@ -1,0 +1,24 @@
+product_title:
+    css: 'h1 a[data-hook="product-link"]'
+    type: Text
+reviews:
+    css: 'div.review div.a-section.celwidget'
+    multiple: true
+    type: Text
+    children:
+        title:
+            css: a.review-title
+            type: Text
+        date:
+            css: span.a-size-base.a-color-secondary
+            type: Text
+        variant:
+            css: 'a.a-size-mini'
+            type: Text
+        rating:
+            css: 'div.a-row:nth-of-type(2) > a.a-link-normal:nth-of-type(1)'
+            type: Attribute
+            attribute: title
+next_page:
+    css: 'li.a-last a'
+    type: Link
