@@ -9,8 +9,8 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.chrome.options import Options
 
 #Uncomment if you would prefer to write in your best seller category url
-url = input("Enter the url of your best-seller page:")
-#url ="https://www.amazon.com/Best-Sellers-Home-Kitchen-Household-Tower-Fans/zgbs/home-garden/241127011/ref=zg_bs_nav_home-garden_3_3737631"
+#url = input("Enter the url of your best-seller page:")
+url ="https://www.amazon.com/gp/bestsellers/hpc/15693671/ref=pd_zg_hrsr_hpc"
 
 headers ={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:66.0) Gecko/20100101 Firefox/66.0", "Accept-Encoding":"gzip, deflate", "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "DNT":"1","Connection":"close", "Upgrade-Insecure-Requests":"1"}
 
@@ -75,18 +75,24 @@ def scrape(url):
     return e.extract(r.text)
 
 with open("Data/urls.txt",'r', encoding="utf-8") as urllist, open('Data/data.csv','w', encoding="utf-8") as outfile, open('Data/finalser.csv','w', encoding="utf-8") as res:
-    res.write("recent rating, immediate rating, best seller ranking, link\n")
+    res.write("ranking, price, recent rating, immediate rating, bottom, link\n")
     writer = csv.DictWriter(outfile, fieldnames=["title","date","variant","rating","product","url"],quoting=csv.QUOTE_ALL)
     writer.writeheader()
     num = 0
     for url in urllist.readlines():
-        sleep(0.5)
+        sleep(0.2)
         list = []
-        total, complete, i, l, half= 0.0, 0.0, 1.0, 0, 0
+        total, complete, i, l, half, lowest= 0.0, 0.0, 1.0, 0, 0, 50.0
         passed = True
         fixed = url[:len(url) - 1]
         num += 1
         print("Downloading %s, "%fixed+str(num))
+        r = requests.get("https://www.amazon.com/dp/"+url[39:50], headers=headers)
+        try:
+            result = re.split('","', re.split('displayPrice":"', str(r.text))[1])[0]
+        except IndexError as whatasdf:
+            result = "N/A"
+
         while i < 11:
             if l > 9:
                 passed = False
@@ -116,6 +122,9 @@ with open("Data/urls.txt",'r', encoding="utf-8") as urllist, open('Data/data.csv
                                 i = 11
                                 passed = False
                                 break
+                            if total < lowest:
+                                lowest = total
+                                
                     fixed = 'https://www.amazon.com'+data['next_page']
                     print(fixed)
                     i += 1
@@ -130,5 +139,5 @@ with open("Data/urls.txt",'r', encoding="utf-8") as urllist, open('Data/data.csv
             if(i == 6):
                 half = complete    
         if passed:
-            res.write(str(num)+", "+str(complete/100)+", "+str(half/50)+", "+"https://www.amazon.com/dp/"+url[39:50]+"\n")
+            res.write(str(num)+", "+result+", "+str(complete/100)+", "+str(half/50)+", "+str(lowest)+", "+"https://www.amazon.com/dp/"+url[39:50]+"\n")
                   
