@@ -44,14 +44,13 @@ driver.quit()
 with open("Data/bestseller.html","w", encoding="utf-8") as f:
     f.write(HTML)
 
+line = ""
 with open('Data/bestseller.html', "r", encoding="utf-8") as infile, open('Data/urls.txt', 'w', encoding="utf-8") as outfile:
-    for line in infile:
-        result = re.search('of 5 stars" href=(.*)</script>', line)
-        if result != None:
-            newest = re.findall('-reviews(.*?)ref', result.string)
-            outfile.write('https://www.amazon.com/product-reviews')
-            outfile.write('?pageNumber=1&reviewerType=avp_only_reviews&sortBy=recent\nhttps://www.amazon.com/product-reviews'.join(newest))
-            outfile.write('?pageNumber=1&reviewerType=avp_only_reviews&sortBy=recent\n')
+    line = infile.readline()
+    newest = re.findall('-reviews(.*?)ref', line)
+    outfile.write('https://www.amazon.com/product-reviews')
+    outfile.write('?pageNumber=1&reviewerType=avp_only_reviews&sortBy=recent\nhttps://www.amazon.com/product-reviews'.join(newest))
+    outfile.write('?pageNumber=1&reviewerType=avp_only_reviews&sortBy=recent\n')
 
 # Create an Extractor by reading from the YAML file
 e = Extractor.from_yaml_file('selectors.yml')
@@ -63,7 +62,12 @@ def scrape(url):
         'sec-fetch-mode': 'navigate', 'sec-fetch-user': '?1', 'sec-fetch-dest': 'document', 'referer': 'https://www.amazon.com/', 'accept-language': 'en-GB,en-US;q=0.9,en;q=0.8',}
 
     # Download the page using requests
-    r = requests.get(url, headers=headers)
+    try:
+        r = requests.get(url, headers=headers)
+    except:
+        sleep(5)
+        print("issues")
+        return e.extract("")
     # Simple check to check if page was blocked (Usually 503)
     if r.status_code > 500:
         if "To discuss automated access to Amazon data please contact" in r.text:
@@ -75,29 +79,19 @@ def scrape(url):
     return e.extract(r.text)
 
 with open("Data/urls.txt",'r', encoding="utf-8") as urllist, open('Data/data.csv','w', encoding="utf-8") as outfile, open('Data/finalser.csv','w', encoding="utf-8") as res:
-    res.write("ranking, price, recent rating, immediate rating, bottom, link, title\n")
+    res.write(url+"\n")
+    res.write("ranking, price, recent rating, immediate rating, bottom, claim rating, rating #, link, title\n")
     writer = csv.DictWriter(outfile, fieldnames=["title","date","variant","rating","product","url"],quoting=csv.QUOTE_ALL)
     writer.writeheader()
     num = 0
     for url in urllist.readlines():
-        sleep(0.2)
         total, complete, i, l, half, lowest, passed , list = 0.0, 0.0, 1.0, 0, 0, 50.0, True, []
         fixed = url[:len(url) - 1]
         num += 1
-        print("Downloading %s, "%fixed+str(num))
-        r = requests.get("https://www.amazon.com/dp/"+url[39:50], headers=headers)
-        title = re.split('"title" content="', str(r.text))[1]
-        try: result = re.split('","', re.split('displayPrice":"', str(r.text))[1])[0]
-        except IndexError as whatasdf: result = "N/A"
-        try: title = re.split('Amazon.com: ', title)[1]
-        except IndexError as whatasdf: 
-            try: title = re.split('Amazon.com : ', title)[1]
-            except IndexError as fwef: print("")
-        try:
-            title = re.split(',', title)[0]
-            title = re.split(':', title)[0]
-        except IndexError as whatasdf: print("")
+        id = url[39:49]
+        print("Downloading %s, "%id+str(num))
         while i < 11:
+            sleep(0.1)
             if l > 9:
                 passed = False
                 break
@@ -130,7 +124,7 @@ with open("Data/urls.txt",'r', encoding="utf-8") as urllist, open('Data/data.csv
                                 lowest = total
                                 
                     fixed = 'https://www.amazon.com'+data['next_page']
-                    print(fixed)
+                    #print(fixed)
                     i += 1
             except TypeError as te:
                 print('Retrying')
@@ -143,5 +137,22 @@ with open("Data/urls.txt",'r', encoding="utf-8") as urllist, open('Data/data.csv
             if(i == 6):
                 half = complete    
         if passed:
-            res.write(str(num)+", "+result+", "+str(complete/100)+", "+str(half/50)+", "+str(lowest)+", "+"https://www.amazon.com/dp/"+url[39:50]+", " + title + "\n")
-                  
+            titstar = re.findall('alt">(.*?) out of', line)[num-1]
+            starnum = str(re.findall('class="a-size-small">(.*?)</span>', line)[num-1])
+            starnum = starnum.replace(",","")
+            r = requests.get("https://www.amazon.com/dp/"+id+"/", headers=headers)
+            try: title = re.split('title" content="', str(r.text))[1]
+            except IndexError as whatasdf: title = str(r.text)
+            try: result = re.split('","', re.split('displayPrice":"', str(r.text))[1])[0]
+            except IndexError as whatasdf: result = "N/A"
+            try: title = re.split('Amazon.com: ', title)[1]
+            except IndexError as whatasdf: 
+                try: title = re.split('Amazon.com : ', title)[1]
+                except IndexError as fwef: print("nested")
+            try:
+                title = re.split(',', title)[0]
+                title = re.split(':', title)[0]
+            except IndexError as whatasdf: print("lastish")
+            message = str(num)+", "+result+", "+str(complete/100)+", "+str(half/50)+", "+str(lowest)+", "+str(titstar)+", "+str(starnum)+", "+"https://www.amazon.com/dp/"+id+"/, " + title + "\n"
+            res.write(message)
+            print(message)
