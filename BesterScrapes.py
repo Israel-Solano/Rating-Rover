@@ -140,19 +140,8 @@ with open("Data/urls.txt",'r', encoding="utf-8") as urllist, open('Data/data.csv
             titstar = re.findall('alt">(.*?) out of', line)[num-1]
             starnum = str(re.findall('class="a-size-small">(.*?)</span>', line)[num-1])
             starnum = starnum.replace(",","")
-            r = requests.get("https://www.amazon.com/dp/"+id+"/", headers=headers)
-            try: title = re.split('title" content="', str(r.text))[1]
-            except IndexError as whatasdf: title = str(r.text)
-            try: result = re.split('","', re.split('displayPrice":"', str(r.text))[1])[0]
-            except IndexError as whatasdf: result = "N/A"
-            try: title = re.split('Amazon.com: ', title)[1]
-            except IndexError as whatasdf: 
-                try: title = re.split('Amazon.com : ', title)[1]
-                except IndexError as fwef: print("nested")
-            try:
-                title = re.split(',', title)[0]
-                title = re.split(':', title)[0]
-            except IndexError as whatasdf: print("lastish")
+            result =  str(re.findall('sc-price_3mJ9Z">(.*?)</span>', line)[num - 1])
+            title =  str(re.findall('clamp-3_g3dy1">(.*?)</', line)[num - 1]).replace(",","")
             message = str(num)+", "+result+", "+str(complete/100)+", "+str(half/50)+", "+str(lowest)+", "+str(titstar)+", "+str(starnum)+", "+"https://www.amazon.com/dp/"+id+"/, " + title + "\n"
             res.write(message)
             print(message)
