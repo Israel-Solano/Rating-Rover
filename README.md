@@ -4,3 +4,5 @@ A python script that gets Amazon's 100 best selling items from a category url yo
 There's also a more extensive version that scans the last 500 reviews instead.
 
 The final file only scans one product for it's recent rating.
+
+Dependencies: requests, selectorlib, selenium
