@@ -10,8 +10,8 @@ from selenium.webdriver.chrome.options import Options
 
 #Uncomment if you would prefer to write in your best seller category url
 url = input("Enter the url of your best-seller page:")
-#url ="https://www.amazon.com/gp/bestsellers/electronics/322215011/ref=pd_zg_hrsr_electronics"
-
+#url ="https://www.amazon.com/Best-Sellers-Home-Kitchen-Wall-Mounted-Fans/zgbs/home-garden/11194456011/ref=zg_bs_nav_home-garden_3_241127011"
+#####
 headers ={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:66.0) Gecko/20100101 Firefox/66.0", "Accept-Encoding":"gzip, deflate", "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "DNT":"1","Connection":"close", "Upgrade-Insecure-Requests":"1"}
 
 chrome_options = Options()
@@ -78,11 +78,11 @@ def scrape(url):
     # Pass the HTML of the page and create 
     return e.extract(r.text)
 
-with open("Data/urls.txt",'r', encoding="utf-8") as urllist, open('Data/data.csv','w', encoding="utf-8") as outfile, open('Data/finalser.csv','w', encoding="utf-8") as res:
+#, open('Data/data.csv','w', encoding="utf-8") as outfile
+with open("Data/urls.txt",'r', encoding="utf-8") as urllist, open('Data/finals.csv','w', encoding="utf-8") as res:
     res.write(url+"\n")
     res.write("ranking, price, recent rating, immediate rating, bottom, claim rating, rating #, link, title\n")
-    writer = csv.DictWriter(outfile, fieldnames=["title","date","variant","rating","product","url"],quoting=csv.QUOTE_ALL)
-    writer.writeheader()
+    #writer = csv.DictWriter(outfile, fieldnames=["title","date","variant","rating","product","url"],quoting=csv.QUOTE_ALL).writeheader()
     num = 0
     for url in urllist.readlines():
         total, complete, i, l, half, lowest, passed , list = 0.0, 0.0, 1.0, 0, 0, 50.0, True, []
@@ -103,7 +103,7 @@ with open("Data/urls.txt",'r', encoding="utf-8") as urllist, open('Data/data.csv
                         r["product"] = data["product_title"]
                         r['url'] = fixed
                         r['rating'] = r['rating'].split(' out of')[0]
-                        writer.writerow(r)
+                        #writer.writerow(r)
                         
                         list.append(float(r['rating']))
                         total += list[-1]
