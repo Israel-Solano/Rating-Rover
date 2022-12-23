@@ -7,11 +7,15 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.chrome.options import Options
+import os
+if __name__ == "__main__":
+    curr_dir = os.path.dirname(os.path.realpath(__file__))
+    os.chdir(curr_dir)
 
-#Uncomment if you would prefer to write in your best seller category url
 url = input("Enter the url of your best-seller page:")
-#url ="https://www.amazon.com/Best-Sellers-Home-Kitchen-Wall-Mounted-Fans/zgbs/home-garden/11194456011/ref=zg_bs_nav_home-garden_3_241127011"
-#####
+#Uncomment if you would prefer to write in your best seller category url
+#url ="https://www.amazon.com/gp/bestsellers/office-products/1069148/ref=pd_zg_hrsr_office-products"
+
 headers ={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:66.0) Gecko/20100101 Firefox/66.0", "Accept-Encoding":"gzip, deflate", "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "DNT":"1","Connection":"close", "Upgrade-Insecure-Requests":"1"}
 
 chrome_options = Options()
@@ -41,11 +45,11 @@ HTML += str(driver.page_source.encode("utf-8"))
 driver.quit()
 
 #add the data you got to a file
-with open("Data/bestseller.html","w", encoding="utf-8") as f:
+with open("Data/bestseller.html","w+", encoding="utf-8") as f:
     f.write(HTML)
 
 line = ""
-with open('Data/bestseller.html', "r", encoding="utf-8") as infile, open('Data/urls.txt', 'w', encoding="utf-8") as outfile:
+with open('Data/bestseller.html', "r", encoding="utf-8") as infile, open('Data/urls.txt', 'w+', encoding="utf-8") as outfile:
     line = infile.readline()
     newest = re.findall('-reviews(.*?)ref', line)
     outfile.write('https://www.amazon.com/product-reviews')
@@ -79,9 +83,10 @@ def scrape(url):
     return e.extract(r.text)
 
 #, open('Data/data.csv','w', encoding="utf-8") as outfile
-with open("Data/urls.txt",'r', encoding="utf-8") as urllist, open('Data/finals.csv','w', encoding="utf-8") as res:
+with open("Data/urls.txt",'r', encoding="utf-8") as urllist, open('Data/finals.csv','w+', encoding="utf-8") as res:
     res.write(url+"\n")
     res.write("ranking, price, recent rating, immediate rating, bottom, claim rating, rating #, link, title\n")
+    pieces = line.split('class="a-icon-alt')
     #writer = csv.DictWriter(outfile, fieldnames=["title","date","variant","rating","product","url"],quoting=csv.QUOTE_ALL).writeheader()
     num = 0
     for url in urllist.readlines():
@@ -137,11 +142,10 @@ with open("Data/urls.txt",'r', encoding="utf-8") as urllist, open('Data/finals.c
             if(i == 6):
                 half = complete    
         if passed:
-            titstar = re.findall('alt">(.*?) out of', line)[num-1]
-            starnum = str(re.findall('class="a-size-small">(.*?)</span>', line)[num-1])
-            starnum = starnum.replace(",","")
-            result =  str(re.findall('sc-price_3mJ9Z">(.*?)</span>', line)[num - 1])
-            title =  str(re.findall('clamp-3_g3dy1">(.*?)</', line)[num - 1]).replace(",","")
-            message = str(num)+", "+result+", "+str(complete/100)+", "+str(half/50)+", "+str(lowest)+", "+str(titstar)+", "+str(starnum)+", "+"https://www.amazon.com/dp/"+id+"/, " + title + "\n"
+            title = re.search('img alt="(.*?)" src="https', pieces[num - 1].split('</span></div></a></div><div class="zg-mlt-list-type aok-hidden">')[-1]).group(1).replace(",","")
+            titstar = re.search('">(.*?) out of', pieces[num]).group(1)
+            starnum = re.search('class="a-size-small">(.*?)</span>', pieces[num]).group(1).replace(",","")
+            result = re.search('\$(.*?)</spa', pieces[num]).group(1)
+            message = str(num)+", $"+result+", "+str(complete/100)+", "+str(half/50)+", "+str(lowest)+", "+str(titstar)+", "+str(starnum)+", "+"https://www.amazon.com/dp/"+id+"/, " + title + "\n"
             res.write(message)
             print(message)
