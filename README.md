@@ -5,3 +5,7 @@ There's also a more extensive version that scans the last 500 reviews instead.
 
 The final file only scans one product for it's recent rating.
 
+#Install Requirements `pip3 install -r requirements.txt`
+#Run `python3 BesterScrapes.py`
+#Add Amazon BestSeller page URLS to program
+#Get data from [finals.csv](finals.csv)
