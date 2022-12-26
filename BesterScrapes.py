@@ -84,7 +84,10 @@ def scrape(url):
 
 #, open('Data/data.csv','w', encoding="utf-8") as outfile
 with open("Data/urls.txt",'r', encoding="utf-8") as urllist, open('Data/finals.csv','w+', encoding="utf-8") as res:
-    res.write(url+"\n")
+    category = str(re.search('text-bold">Best Sellers in (.*?)</', line).group(1))
+    top = category + ", " + url+"\n"
+    res.write(top)
+    print(top)
     res.write("ranking, price, recent rating, immediate rating, bottom, claim rating, rating #, link, title\n")
     pieces = line.split('class="a-icon-alt')
     #writer = csv.DictWriter(outfile, fieldnames=["title","date","variant","rating","product","url"],quoting=csv.QUOTE_ALL).writeheader()
@@ -142,10 +145,15 @@ with open("Data/urls.txt",'r', encoding="utf-8") as urllist, open('Data/finals.c
             if(i == 6):
                 half = complete    
         if passed:
-            title = re.search('img alt="(.*?)" src="https', pieces[num - 1].split('</span></div></a></div><div class="zg-mlt-list-type aok-hidden">')[-1]).group(1).replace(",","")
+            #possibly add .split('</span></div></a></div><div class="zg-mlt-list-type aok-hidden">')[-1]
+            part1 = pieces[num - 1].split('img alt=')[-1]
+            title = re.search('"(.*?)" src="https', part1).group(1).replace(",","").replace("\\x","")
             titstar = re.search('">(.*?) out of', pieces[num]).group(1)
             starnum = re.search('class="a-size-small">(.*?)</span>', pieces[num]).group(1).replace(",","")
-            result = re.search('\$(.*?)</spa', pieces[num]).group(1)
+            try:
+                result = re.search('\$(.*?)</spa', pieces[num]).group(1)
+            except AttributeError as huh:
+                result = "N/A"
             message = str(num)+", $"+result+", "+str(complete/100)+", "+str(half/50)+", "+str(lowest)+", "+str(titstar)+", "+str(starnum)+", "+"https://www.amazon.com/dp/"+id+"/, " + title + "\n"
             res.write(message)
             print(message)
