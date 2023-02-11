@@ -14,13 +14,13 @@ if __name__ == "__main__":
 
 url = input("Enter the url of your best-seller page:")
 #Uncomment if you would prefer to write in your best seller category url
-#url ="https://www.amazon.com/gp/bestsellers/office-products/1069148/ref=pd_zg_hrsr_office-products"
+#url = 'https://www.amazon.com/Best-Sellers-Adult-Electric-Bicycles/zgbs/sporting-goods/3405141'
 
 headers ={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:66.0) Gecko/20100101 Firefox/66.0", "Accept-Encoding":"gzip, deflate", "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "DNT":"1","Connection":"close", "Upgrade-Insecure-Requests":"1"}
 
 chrome_options = Options()
 chrome_options.headless = True
-driver = webdriver.Chrome(options=chrome_options)
+driver = webdriver.Chrome(chrome_options=chrome_options)
 actions = ActionChains(driver)
 
 #move to bottom so it can get the rest of the page
@@ -57,10 +57,9 @@ with open('Data/bestseller.html', "r", encoding="utf-8") as infile, open('Data/u
     outfile.write('?pageNumber=1&reviewerType=avp_only_reviews&sortBy=recent\n')
 
 # Create an Extractor by reading from the YAML file
-e = Extractor.from_yaml_file('selectors.yml')
 
 def scrape(url):  
-
+    e = Extractor.from_yaml_file('selectors.yml')
     headers = {'dnt': '1', 'upgrade-insecure-requests': '1', 'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36',
         'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9', 'sec-fetch-site': 'same-origin',
         'sec-fetch-mode': 'navigate', 'sec-fetch-user': '?1', 'sec-fetch-dest': 'document', 'referer': 'https://www.amazon.com/', 'accept-language': 'en-GB,en-US;q=0.9,en;q=0.8',}
@@ -68,7 +67,7 @@ def scrape(url):
     # Download the page using requests
     try:
         r = requests.get(url, headers=headers)
-    except:
+    except Exception:
         sleep(5)
         print("issues")
         return e.extract("")
@@ -88,18 +87,30 @@ with open("Data/urls.txt",'r', encoding="utf-8") as urllist, open('Data/finals.c
     top = category + ", " + url+"\n"
     res.write(top)
     print(top)
-    res.write("ranking, price, recent rating, immediate rating, bottom, claim rating, rating #, link, title\n")
+    #res.write("ranking, price, recent rating, immediate rating, bottom, claim rating, rating #, link, title\n")
     pieces = line.split('class="a-icon-alt')
     #writer = csv.DictWriter(outfile, fieldnames=["title","date","variant","rating","product","url"],quoting=csv.QUOTE_ALL).writeheader()
     num = 0
     for url in urllist.readlines():
+        num += 1
         total, complete, i, l, half, lowest, passed , list = 0.0, 0.0, 1.0, 0, 0, 50.0, True, []
         fixed = url[:len(url) - 1]
-        num += 1
         id = url[39:49]
         print("Downloading %s, "%id+str(num))
+
+        try:
+            sleep(0.15)
+            checkNum = str(re.search('total ratings, (.*?) with reviews', str(requests.get(url, headers=headers).content)).group(1)).replace(",", "")
+            print(checkNum+' reviews')
+            if int(checkNum) < 100:
+                continue
+        
+        except AttributeError as e:
+            print('Review Number Error')
+            continue
+        
         while i < 11:
-            sleep(0.1)
+            sleep(0.15)
             if l > 9:
                 passed = False
                 break
@@ -124,13 +135,13 @@ with open("Data/urls.txt",'r', encoding="utf-8") as urllist, open('Data/finals.c
 
                         if len(list) == 10:
                             total -= list.pop(0)
-                            if total <= 30:
+                            if total < 30:
                                 i = 11
                                 passed = False
                                 break
                             if total < lowest:
                                 lowest = total
-                                
+                    print(i)            
                     fixed = 'https://www.amazon.com'+data['next_page']
                     #print(fixed)
                     i += 1
@@ -151,7 +162,7 @@ with open("Data/urls.txt",'r', encoding="utf-8") as urllist, open('Data/finals.c
             titstar = re.search('">(.*?) out of', pieces[num]).group(1)
             starnum = re.search('class="a-size-small">(.*?)</span>', pieces[num]).group(1).replace(",","")
             try:
-                result = re.search('\$(.*?)</spa', pieces[num]).group(1)
+                result = re.search('\$(.*?)</spa', pieces[num]).group(1).replace(",","")
             except AttributeError as huh:
                 result = "N/A"
             message = str(num)+", $"+result+", "+str(complete/100)+", "+str(half/50)+", "+str(lowest)+", "+str(titstar)+", "+str(starnum)+", "+"https://www.amazon.com/dp/"+id+"/, " + title + "\n"
