@@ -20,7 +20,7 @@ headers ={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:66.0) Gecko
 
 chrome_options = Options()
 chrome_options.headless = True
-driver = webdriver.Chrome(chrome_options=chrome_options)
+driver = webdriver.Chrome(options=chrome_options)
 actions = ActionChains(driver)
 
 #move to bottom so it can get the rest of the page
@@ -35,6 +35,7 @@ def move():
         i += 1
     sleep(1)
 
+url = url.split('/ref=')[0]
 driver.implicitly_wait(10) # probably unnecessary, just makes sure all pages you visit fully load
 driver.get(url)
 move()
@@ -101,8 +102,8 @@ with open("Data/urls.txt",'r', encoding="utf-8") as urllist, open('Data/finals.c
         try:
             sleep(0.15)
             checkNum = str(re.search('total ratings, (.*?) with reviews', str(requests.get(url, headers=headers).content)).group(1)).replace(",", "")
-            print(checkNum+' reviews')
             if int(checkNum) < 100:
+                print('Only ' + checkNum+' reviews')
                 continue
         
         except AttributeError as e:
@@ -136,12 +137,12 @@ with open("Data/urls.txt",'r', encoding="utf-8") as urllist, open('Data/finals.c
                         if len(list) == 10:
                             total -= list.pop(0)
                             if total < 30:
+                                print('Failed on page: ' + str(i))
                                 i = 11
                                 passed = False
                                 break
                             if total < lowest:
-                                lowest = total
-                    print(i)            
+                                lowest = total        
                     fixed = 'https://www.amazon.com'+data['next_page']
                     #print(fixed)
                     i += 1
