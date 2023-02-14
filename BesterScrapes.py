@@ -14,9 +14,9 @@ if __name__ == "__main__":
     curr_dir = os.path.dirname(os.path.realpath(__file__))
     os.chdir(curr_dir)
 
-url = input("Enter the url of your best-seller page:")
+#url = input("Enter the url of your best-seller page:")
 #Uncomment if you would prefer to write in your best seller category url
-#url = 'https://www.amazon.com/Best-Sellers-Adult-Electric-Bicycles/zgbs/sporting-goods/3405141'
+url = 'https://www.amazon.com/Best-Sellers-Adult-Electric-Bicycles/zgbs/sporting-goods/3405141'
 
 headers ={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:66.0) Gecko/20100101 Firefox/66.0", "Accept-Encoding":"gzip, deflate", "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "DNT":"1","Connection":"close", "Upgrade-Insecure-Requests":"1"}
 
@@ -105,7 +105,7 @@ with open("Data/urls.txt",'r', encoding="utf-8") as urlList, open('Data/finals.c
         try:
             sleep(0.15)
             checkNum = str(re.search('total ratings, (.*?) with reviews', str(requests.get(url, headers=headers).content)).group(1)).replace(",", "")
-            if int(checkNum) < 100:
+            if int(checkNum) < 101:
                 print('Only ' + checkNum+' reviews\n')
                 continue
         

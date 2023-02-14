@@ -13,10 +13,9 @@ import fake_useragent
 if __name__ == "__main__":
     curr_dir = os.path.dirname(os.path.realpath(__file__))
     os.chdir(curr_dir)
-    
-headers ={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:66.0) Gecko/20100101 Firefox/66.0", "Accept-Encoding":"gzip, deflate", "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "DNT":"1","Connection":"close", "Upgrade-Insecure-Requests":"1"}
 ua = fake_useragent.UserAgent()
 # Create an Extractor by reading from the YAML file
+
 
 def scrape(url):  
     e = Extractor.from_yaml_file('selectors.yml')
@@ -43,22 +42,32 @@ def scrape(url):
 
 #, open('Data/data.csv','w', encoding="utf-8") as outfile
 with open("Data/urls.txt",'r', encoding="utf-8") as urlList, open('Data/finals.csv','w+', encoding="utf-8") as res:
-    #pieces = line.split('class="a-icon-alt')
-    #res.write("ranking, price, recent rating, immediate rating, bottom, claim rating, rating #, link, title\n")
-    # writer = csv.DictWriter(outfile, fieldnames=["title","date","variant","rating","product","url"],quoting=csv.QUOTE_ALL).writeheader()
+    res.write("recent rating, immediate rating, bottom, claim rating, rating #, link, title\n")
     num = 0
     for url in urlList.readlines():
         num += 1
-        total, complete, i, l, half, lowest, passed , list = 0.0, 0.0, 1.0, 0, 0, 50.0, True, []
+        total, complete, i, l, half, lowest, passed, dp, list = 0.0, 0.0, 1.0, 0, 0, 50.0, True, False, []
+            
+        
         fixed = url[:len(url) - 1]
         id = url[39:49]
-        print("Downloading %s, "%id+str(num))
+        if "/dp/" in url:
+            id = re.search('/dp/(.*?)/', url).group(1)
+            dp = True
+            fixed = "https://www.amazon.com/product-reviews/" + id + "/?pageNumber=1&reviewerType=avp_only_reviews&sortBy=recent"
+        elif "/gp/" in url: 
+            id = re.search('/gp/product/(.*?)/', url).group(1)
+            dp = True
+            fixed = "https://www.amazon.com/product-reviews/" + id + "/?pageNumber=1&reviewerType=avp_only_reviews&sortBy=recent"
+        
+        print("Downloading %s, "%fixed+str(num))
 
-        checker = str(requests.get(url, headers=headers).content)
+        headers ={"User-Agent":ua.random, "Accept-Encoding":"gzip, deflate", "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "DNT":"1","Connection":"close", "Upgrade-Insecure-Requests":"1"}
+        checker = str(requests.get(fixed, headers=headers).content)
         try:
             sleep(0.15)
             checkNum = str(re.search('total ratings, (.*?) with reviews', checker).group(1)).replace(",", "")
-            if int(checkNum) < 100:
+            if int(checkNum) < 101:
                 print('Only ' + checkNum+' reviews\n')
                 continue
         
@@ -92,7 +101,7 @@ with open("Data/urls.txt",'r', encoding="utf-8") as urlList, open('Data/finals.c
 
                         if len(list) == 10:
                             total -= list.pop(0)
-                            if total < 10:
+                            if total < 15:
                                 print('Failed on page: ' + str(i) + '\n')
                                 i = 11
                                 passed = False
@@ -114,14 +123,13 @@ with open("Data/urls.txt",'r', encoding="utf-8") as urlList, open('Data/finals.c
                 half = complete    
         if passed:
             #possibly add .split('</span></div></a></div><div class="zg-mlt-list-type aok-hidden">')[-1]
-            #part1 = pieces[num - 1].split('img alt=')[-1]
             title = re.search('<title>Amazon.com: Customer reviews:(.*?)</title>', checker).group(1).replace(",","").replace("\\x","")
             titStar = re.search('a-icon-alt">(.*?) out of 5', checker).group(1)
             starNum = re.search('secondary">(.*?) global ratings</span>', checker).group(1).replace(",","")
-            #try:
-            #    result = re.search('\$(.*?)</spa', pieces[num]).group(1).replace(",","")
-            #except AttributeError as huh:
-            #    result = "N/A"
-            message = str(num)+", $"+", "+str(complete/100)+", "+str(half/50)+", "+str(lowest)+", "+str(titStar)+", "+str(starNum)+", "+"https://www.amazon.com/dp/"+id+"/, " + title + "\n"
+            
+            if dp:
+                message = str(complete/100)+", "+str(half/50)+", "+str(lowest)+", "+str(titStar)+", "+str(starNum)+", "+"https://www.amazon.com/dp/"+id+"/, " + title + "\n"
+            else:
+                message = str(complete/100)+", "+str(half/50)+", "+str(lowest)+", "+str(titStar)+", "+str(starNum)+", "+ fixed + ", " + title + "\n"
             res.write(message)
             print(message)
