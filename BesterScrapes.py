@@ -14,9 +14,9 @@ if __name__ == "__main__":
     curr_dir = os.path.dirname(os.path.realpath(__file__))
     os.chdir(curr_dir)
 
-#url = input("Enter the url of your best-seller page:")
+url = input("Enter the url of your best-seller page:")
 #Uncomment if you would prefer to write in your best seller category url
-url = 'https://www.amazon.com/Best-Sellers-Adult-Electric-Bicycles/zgbs/sporting-goods/3405141'
+#url = 'https://www.amazon.com/Best-Sellers-Adult-Electric-Bicycles/zgbs/sporting-goods/3405141'
 
 headers ={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:66.0) Gecko/20100101 Firefox/66.0", "Accept-Encoding":"gzip, deflate", "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "DNT":"1","Connection":"close", "Upgrade-Insecure-Requests":"1"}
 
@@ -48,11 +48,11 @@ HTML += str(driver.page_source.encode("utf-8"))
 driver.quit()
 
 #add the data you got to a file
-with open("Data/bestseller.html","w+", encoding="utf-8") as f:
+with open("bestseller.html","w+", encoding="utf-8") as f:
     f.write(HTML)
 
 line = ""
-with open('Data/bestseller.html', "r", encoding="utf-8") as inFile, open('Data/urls.txt', 'w+', encoding="utf-8") as outfile:
+with open('bestseller.html', "r", encoding="utf-8") as inFile, open('urls.txt', 'w+', encoding="utf-8") as outfile:
     line = inFile.readline()
     newest = re.findall('-reviews(.*?)ref', line)
     outfile.write('https://www.amazon.com/product-reviews')
@@ -86,7 +86,7 @@ def scrape(url):
     return e.extract(r.text)
 
 #, open('Data/data.csv','w', encoding="utf-8") as outfile
-with open("Data/urls.txt",'r', encoding="utf-8") as urlList, open('Data/finals.csv','w+', encoding="utf-8") as res:
+with open("urls.txt",'r', encoding="utf-8") as urlList, open('finals.csv','w+', encoding="utf-8") as res:
     category = str(re.search('text-bold">Best Sellers in (.*?)</', line).group(1))
     top = category + ", " + url+"\n"
     res.write(top)
