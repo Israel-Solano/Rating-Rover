@@ -14,9 +14,9 @@ if __name__ == "__main__":
     curr_dir = os.path.dirname(os.path.realpath(__file__))
     os.chdir(curr_dir)
 
-url = input("Enter the url of your best-seller page:")
+#url = input("Enter the url of your best-seller page:")
 #Uncomment if you would prefer to write in your best seller category url
-#url = 'https://www.amazon.com/Best-Sellers-Adult-Electric-Bicycles/zgbs/sporting-goods/3405141'
+url = 'https://www.amazon.com/Best-Sellers-Adult-Electric-Bicycles/zgbs/sporting-goods/3405141'
 
 headers ={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:66.0) Gecko/20100101 Firefox/66.0", "Accept-Encoding":"gzip, deflate", "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "DNT":"1","Connection":"close", "Upgrade-Insecure-Requests":"1"}
 
@@ -63,6 +63,7 @@ ua = fake_useragent.UserAgent()
 # Create an Extractor by reading from the YAML file
 
 def scrape(url):  
+    sleep(0.1)
     e = Extractor.from_yaml_file('selectors.yml')
     headers = {'dnt': '1', 'upgrade-insecure-requests': '1', 'user-agent': ua.random,
         'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9', 'sec-fetch-site': 'same-origin',
@@ -103,7 +104,7 @@ with open("urls.txt",'r', encoding="utf-8") as urlList, open('finals.csv','w+', 
         print("Downloading %s, "%id+str(num))
 
         try:
-            sleep(0.15)
+            sleep(0.1)
             checkNum = str(re.search('total ratings, (.*?) with reviews', str(requests.get(url, headers=headers).content)).group(1)).replace(",", "")
             if int(checkNum) < 101:
                 print('Only ' + checkNum+' reviews\n')
@@ -114,7 +115,6 @@ with open("urls.txt",'r', encoding="utf-8") as urlList, open('finals.csv','w+', 
             continue
         
         while i < 11:
-            sleep(0.15)
             if l > 9:
                 passed = False
                 break
@@ -169,6 +169,6 @@ with open("urls.txt",'r', encoding="utf-8") as urlList, open('finals.csv','w+', 
                 result = re.search('\$(.*?)</spa', pieces[num]).group(1).replace(",","")
             except AttributeError as huh:
                 result = "N/A"
-            message = str(num)+", $"+result+", "+str(complete/100)+", "+str(half/50)+", "+str(lowest)+", "+str(titStar)+", "+str(starNum)+", "+"https://www.amazon.com/dp/"+id+"/, " + title + "\n"
+            message = "%d, $%s, %.2f, %.2f, %d, %s, %s, https://www.amazon.com/dp/%s/, %s\n"%(num, result,complete/100, half/50, lowest, titStar, starNum, id, title)
             res.write(message)
             print(message)

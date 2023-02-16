@@ -40,8 +40,8 @@ def scrape(url):
     # Pass the HTML of the page and create 
     return e.extract(r.text)
 
-#, open('Data/data.csv','w', encoding="utf-8") as outfile
-with open("Data/urls.txt",'r', encoding="utf-8") as urlList, open('Data/finals.csv','w+', encoding="utf-8") as res:
+#, open('data.csv','w', encoding="utf-8") as outfile
+with open("urls.txt",'r', encoding="utf-8") as urlList, open('finals.csv','w+', encoding="utf-8") as res:
     res.write("recent rating, immediate rating, bottom, claim rating, rating #, link, title\n")
     num = 0
     for url in urlList.readlines():
@@ -128,8 +128,8 @@ with open("Data/urls.txt",'r', encoding="utf-8") as urlList, open('Data/finals.c
             starNum = re.search('secondary">(.*?) global ratings</span>', checker).group(1).replace(",","")
             
             if dp:
-                message = str(complete/100)+", "+str(half/50)+", "+str(lowest)+", "+str(titStar)+", "+str(starNum)+", "+"https://www.amazon.com/dp/"+id+"/, " + title + "\n"
+                message = "%.2f, %.2f, %d, %s, %s, %s, %s\n"%(complete/100, half/50, lowest, titStar, starNum, fixed, title)
             else:
-                message = str(complete/100)+", "+str(half/50)+", "+str(lowest)+", "+str(titStar)+", "+str(starNum)+", "+ fixed + ", " + title + "\n"
+                message = "%.2f, %.2f, %d, %s, %s, https://www.amazon.com/dp/%s/, %s\n"%(complete/100, half/50, lowest, titStar, starNum, id, title)
             res.write(message)
             print(message)
