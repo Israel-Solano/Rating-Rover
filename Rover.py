@@ -1,7 +1,6 @@
 from selectorlib import Extractor
 import requests 
 from time import sleep
-import csv
 import re
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -14,13 +13,13 @@ if __name__ == "__main__":
     curr_dir = os.path.dirname(os.path.realpath(__file__))
     os.chdir(curr_dir)
 
-url = input("Enter the url of your best-seller page:")
+#url = input("Enter the url of your best-seller page:").split('/ref=')[0]
 #Uncomment if you would prefer to write in your best seller category url
-#url = 'https://www.amazon.com/Best-Sellers-Adult-Electric-Bicycles/zgbs/sporting-goods/3405141'
+url = 'https://www.amazon.com/Best-Sellers-Adult-Electric-Bicycles/zgbs/sporting-goods/3405141'
 
 headers ={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:66.0) Gecko/20100101 Firefox/66.0", "Accept-Encoding":"gzip, deflate", "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "DNT":"1","Connection":"close", "Upgrade-Insecure-Requests":"1"}
 
-chrome_options = Options()
+chrome_options, line = Options(), ""
 chrome_options.headless = True
 driver = webdriver.Chrome(options=chrome_options)
 actions = ActionChains(driver)
@@ -28,6 +27,7 @@ actions = ActionChains(driver)
 #move to bottom so it can get the rest of the page
 def move():
     i = 0
+    sleep(5)
     while i < 5:
         el = driver.find_element(By.CLASS_NAME, "a-pagination")
         action = ActionChains(driver)
@@ -35,10 +35,7 @@ def move():
         action.perform()
         sleep(0.2)
         i += 1
-    sleep(1)
 
-url = url.split('/ref=')[0]
-driver.implicitly_wait(10) # probably unnecessary, just makes sure all pages you visit fully load
 driver.get(url) #Something about get bothers it
 move()
 HTML = str(driver.page_source.encode("utf-8"))
@@ -51,12 +48,10 @@ driver.quit()
 with open("bestseller.html","w+", encoding="utf-8") as f:
     f.write(HTML)
 
-line = ""
 with open('bestseller.html', "r", encoding="utf-8") as inFile, open('urls.txt', 'w+', encoding="utf-8") as outfile:
     line = inFile.readline()
-    newest = re.findall('-reviews(.*?)ref', line)
     outfile.write('https://www.amazon.com/product-reviews')
-    outfile.write('?pageNumber=1&reviewerType=avp_only_reviews&sortBy=recent\nhttps://www.amazon.com/product-reviews'.join(newest))
+    outfile.write('?pageNumber=1&reviewerType=avp_only_reviews&sortBy=recent\nhttps://www.amazon.com/product-reviews'.join(re.findall('-reviews(.*?)ref', line)))
     outfile.write('?pageNumber=1&reviewerType=avp_only_reviews&sortBy=recent\n')
 
 ua = fake_useragent.UserAgent()
@@ -65,9 +60,8 @@ ua = fake_useragent.UserAgent()
 def scrape(url):  
     sleep(0.1)
     e = Extractor.from_yaml_file('selectors.yml')
-    headers = {'dnt': '1', 'upgrade-insecure-requests': '1', 'user-agent': ua.random,
-        'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9', 'sec-fetch-site': 'same-origin',
-        'sec-fetch-mode': 'navigate', 'sec-fetch-user': '?1', 'sec-fetch-dest': 'document', 'referer': 'https://www.amazon.com/', 'accept-language': 'en-GB,en-US;q=0.9,en;q=0.8',}
+    headers = {'dnt': '1', 'upgrade-insecure-requests': '1', 'user-agent': ua.random, 'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9', 
+               'sec-fetch-site': 'same-origin', 'sec-fetch-mode': 'navigate', 'sec-fetch-user': '?1', 'sec-fetch-dest': 'document', 'referer': 'https://www.amazon.com/', 'accept-language': 'en-GB,en-US;q=0.9,en;q=0.8',}
 
     # Download the page using requests
     try:
@@ -78,15 +72,11 @@ def scrape(url):
         return e.extract("")
     # Simple check to check if page was blocked (Usually 503)
     if r.status_code > 500:
-        if "To discuss automated access to Amazon data please contact" in r.text:
-            print("Page %s was blocked by Amazon. Please try using better proxies\n"%url)
-        else:
-            print("Page %s must have been blocked by Amazon as the status code was %d"%(url,r.status_code))
+        print("Page %s must have been blocked by Amazon as the status code was %d"%(url,r.status_code))
         return None
     # Pass the HTML of the page and create 
     return e.extract(r.text)
 
-#, open('Data/data.csv','w', encoding="utf-8") as outfile
 with open("urls.txt",'r', encoding="utf-8") as urlList, open('finals.csv','w+', encoding="utf-8") as res:
     category = str(re.search('text-bold">Best Sellers in (.*?)</', line).group(1))
     top = category + ", " + url+"\n"
@@ -142,7 +132,6 @@ with open("urls.txt",'r', encoding="utf-8") as urlList, open('finals.csv','w+', 
                             if total < lowest:
                                 lowest = total        
                     fixed = 'https://www.amazon.com'+data['next_page']
-                    #print(fixed)
                     i += 1
             except TypeError as te:
                 print('Retrying page ' + str(i))
