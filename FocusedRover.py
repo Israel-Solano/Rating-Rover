@@ -63,10 +63,9 @@ with open("urls.txt",'r', encoding="utf-8") as urlList, open('finals.csv','w+', 
         print("Downloading %s, "%fixed+str(num))
 
         headers ={"User-Agent":ua.random, "Accept-Encoding":"gzip, deflate", "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "DNT":"1","Connection":"close", "Upgrade-Insecure-Requests":"1"}
-        checker = str(requests.get(fixed, headers=headers).content)
         try:
             sleep(0.15)
-            checkNum = str(re.search('total ratings, (.*?) with reviews', checker).group(1)).replace(",", "")
+            checkNum = str(re.search(', (.*?) with', scrape(fixed)["review_count"]).group(1)).replace(",", "")
             if int(checkNum) < 101:
                 print('Only ' + checkNum+' reviews\n')
                 continue
@@ -85,12 +84,7 @@ with open("urls.txt",'r', encoding="utf-8") as urlList, open('finals.csv','w+', 
                 # see dif print(len(data['reviews']))
                 if data:
                     for r in data['reviews']:
-                        r["product"] = data["product_title"]
-                        r['url'] = fixed
-                        r['rating'] = r['rating'].split(' out of')[0]
-                        #writer.writerow(r)
-                        
-                        list.append(float(r['rating']))
+                        list.append(float(r['rating'].split(' out of')[0]))
                         total += list[-1]
                         complete += list[-1]
 
@@ -123,9 +117,9 @@ with open("urls.txt",'r', encoding="utf-8") as urlList, open('finals.csv','w+', 
                 half = complete    
         if passed:
             #possibly add .split('</span></div></a></div><div class="zg-mlt-list-type aok-hidden">')[-1]
-            title = re.search('<title>Amazon.com: Customer reviews:(.*?)</title>', checker).group(1).replace(",","").replace("\\x","")
-            titStar = re.search('a-icon-alt">(.*?) out of 5', checker).group(1)
-            starNum = re.search('secondary">(.*?) global ratings</span>', checker).group(1).replace(",","")
+            title = re.sub(r'[^\x00-\x7F]+', '', data["product_title"]).replace(",","")
+            titStar = data["rating"].split(' out of')[0]
+            starNum = data["starNum"].split(' global ratings')[0].replace(",","")
             
             if dp:
                 message = "%.2f, %.2f, %d, %s, %s, %s, %s\n"%(complete/100, half/50, lowest, titStar, starNum, fixed, title)

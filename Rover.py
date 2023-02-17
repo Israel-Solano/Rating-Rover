@@ -14,9 +14,9 @@ if __name__ == "__main__":
     curr_dir = os.path.dirname(os.path.realpath(__file__))
     os.chdir(curr_dir)
 
-#url = input("Enter the url of your best-seller page:")
+url = input("Enter the url of your best-seller page:")
 #Uncomment if you would prefer to write in your best seller category url
-url = 'https://www.amazon.com/Best-Sellers-Adult-Electric-Bicycles/zgbs/sporting-goods/3405141'
+#url = 'https://www.amazon.com/Best-Sellers-Adult-Electric-Bicycles/zgbs/sporting-goods/3405141'
 
 headers ={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:66.0) Gecko/20100101 Firefox/66.0", "Accept-Encoding":"gzip, deflate", "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "DNT":"1","Connection":"close", "Upgrade-Insecure-Requests":"1"}
 
@@ -105,7 +105,7 @@ with open("urls.txt",'r', encoding="utf-8") as urlList, open('finals.csv','w+', 
 
         try:
             sleep(0.1)
-            checkNum = str(re.search('total ratings, (.*?) with reviews', str(requests.get(url, headers=headers).content)).group(1)).replace(",", "")
+            checkNum = str(re.search(', (.*?) with', scrape(fixed)["review_count"]).group(1)).replace(",", "")
             if int(checkNum) < 101:
                 print('Only ' + checkNum+' reviews\n')
                 continue
@@ -123,12 +123,7 @@ with open("urls.txt",'r', encoding="utf-8") as urlList, open('finals.csv','w+', 
                 # see dif print(len(data['reviews']))
                 if data:
                     for r in data['reviews']:
-                        r["product"] = data["product_title"]
-                        r['url'] = fixed
-                        r['rating'] = r['rating'].split(' out of')[0]
-                        #writer.writerow(r)
-                        
-                        list.append(float(r['rating']))
+                        list.append(float(r['rating'].split(' out of')[0]))
                         total += list[-1]
                         complete += list[-1]
 
@@ -161,14 +156,14 @@ with open("urls.txt",'r', encoding="utf-8") as urlList, open('finals.csv','w+', 
                 half = complete    
         if passed:
             #possibly add .split('</span></div></a></div><div class="zg-mlt-list-type aok-hidden">')[-1]
-            part1 = pieces[num - 1].split('img alt=')[-1]
-            title = re.search('"(.*?)" src="https', part1).group(1).replace(",","").replace("\\x","")
-            titStar = re.search('">(.*?) out of', pieces[num]).group(1)
-            starNum = re.search('class="a-size-small">(.*?)</span>', pieces[num]).group(1).replace(",","")
+            title = re.sub(r'[^\x00-\x7F]+', '', data["product_title"]).replace(",","")
+            titStar = data["rating"].split(' out of')[0]
+            starNum = data["starNum"].split(' global ratings')[0].replace(",","")
             try:
                 result = re.search('\$(.*?)</spa', pieces[num]).group(1).replace(",","")
             except AttributeError as huh:
                 result = "N/A"
-            message = "%d, $%s, %.2f, %.2f, %d, %s, %s, https://www.amazon.com/dp/%s/, %s\n"%(num, result,complete/100, half/50, lowest, titStar, starNum, id, title)
+            message = "%d, $%s, %.2f, %.2f, %d, %s, %s, https://www.amazon.com/dp/%s/, %s\n"%(num, result, complete/100, half/50, lowest, titStar, starNum, id, title)
             res.write(message)
             print(message)
+            #result left

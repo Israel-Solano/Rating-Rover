@@ -1,6 +1,12 @@
 product_title:
     css: 'h1 a[data-hook="product-link"]'
     type: Text
+starNum:
+    css: 'div[data-hook="total-review-count"] span.a-size-base.a-color-secondary'
+    type: Text
+rating:
+    css: 'span[data-hook="rating-out-of-text"]'
+    type: Text
 reviews:
     css: 'div.review div.a-section.celwidget'
     multiple: true
@@ -22,3 +28,8 @@ reviews:
 next_page:
     css: 'li.a-last a'
     type: Link
+review_count:
+    css: 'div[data-hook="cr-filter-info-review-rating-count"]'
+    type: Text
+    filters:
+        - Strip
