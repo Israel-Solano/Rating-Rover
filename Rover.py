@@ -20,6 +20,7 @@ url = input("Enter the url of your best-seller page:").split('/ref=')[0]
 headers ={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:87.0) Gecko/20100101 Firefox/87.0", "Accept-Encoding":"gzip, deflate, br", "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "DNT":"1","Connection":"close", "Upgrade-Insecure-Requests":"1"}
 
 chrome_options, line = Options(), ""
+chrome_options.add_argument('--log-level=3')
 chrome_options.add_argument("--headless")
 driver = webdriver.Chrome(options=chrome_options)
 actions = ActionChains(driver)
@@ -58,7 +59,7 @@ ua = fake_useragent.UserAgent()
 # Create an Extractor by reading from the YAML file
 
 def scrape(url):  
-    sleep(0.1)
+    sleep(0.15)
     e = Extractor.from_yaml_file('selectors.yml')
     headers = {"User-Agent": ua.random, "Accept-Encoding":"gzip, deflate", "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "DNT":"1","Connection":"close", "Upgrade-Insecure-Requests":"1"}
 
