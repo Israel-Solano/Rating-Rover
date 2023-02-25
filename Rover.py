@@ -15,7 +15,7 @@ if __name__ == "__main__":
 
 url = input("Enter the url of your best-seller page:").split('/ref=')[0]
 #Uncomment if you would prefer to write in your best seller category url
-#url = 'https://www.amazon.com/Best-Sellers-Pet-Supplies-Cat-Food/zgbs/pet-supplies/2975265011'
+#url = 'https://www.amazon.com/Best-Sellers-Video-Games-PC-Games-Accessories/zgbs/videogames/229575/ref=zg_bs_unv_videogames_2_318813011_1'
 
 headers ={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:87.0) Gecko/20100101 Firefox/87.0", "Accept-Encoding":"gzip, deflate, br", "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "DNT":"1","Connection":"close", "Upgrade-Insecure-Requests":"1"}
 
@@ -59,7 +59,7 @@ ua = fake_useragent.UserAgent()
 # Create an Extractor by reading from the YAML file
 
 def scrape(url):  
-    sleep(0.15)
+    sleep(0.2)
     e = Extractor.from_yaml_file('selectors.yml')
     headers = {"User-Agent": ua.random, "Accept-Encoding":"gzip, deflate", "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "DNT":"1","Connection":"close", "Upgrade-Insecure-Requests":"1"}
 
@@ -75,14 +75,15 @@ def scrape(url):
         print("Page %s must have been blocked by Amazon as the status code was %d"%(url,r.status_code))
         return None
     # Pass the HTML of the page and create 
+    #print(re.sub(r'[^\x00-\x7F]+', '', r.text))
     return e.extract(r.text)
 
 with open("urls.txt",'r', encoding="utf-8") as urlList, open('finals.csv','w+', encoding="utf-8") as res:
     category = str(re.search('text-bold">Best Sellers in (.*?)</', line).group(1))
-    top = category + ", " + url+"\n"
+    pieces = line.split('class="a-icon-alt')
+    top = "\n%s, %s, %d results\n"%(category, url,len(pieces))
     res.write(top)
     print(top)
-    pieces = line.split('class="a-icon-alt')
     #res.write("ranking, price, recent rating, immediate rating, bottom, claim rating, rating #, link, title\n")
     # writer = csv.DictWriter(outfile, fieldnames=["title","date","variant","rating","product","url"],quoting=csv.QUOTE_ALL).writeheader()
     num = 0
