@@ -81,9 +81,9 @@ def scrape(url):
 with open("urls.txt",'r', encoding="utf-8") as urlList, open('finals.csv','w+', encoding="utf-8") as res:
     category = str(re.search('text-bold">Best Sellers in (.*?)</', line).group(1))
     pieces = line.split('class="a-icon-alt')
-    top = "\n%s, %s, %d results\n"%(category, url,len(pieces))
+    top = "%s, %s, %d results\n"%(category, url,len(pieces))
     res.write(top)
-    print(top)
+    print("\n%s"%top)
     #res.write("ranking, price, recent rating, immediate rating, bottom, claim rating, rating #, link, title\n")
     # writer = csv.DictWriter(outfile, fieldnames=["title","date","variant","rating","product","url"],quoting=csv.QUOTE_ALL).writeheader()
     num = 0
