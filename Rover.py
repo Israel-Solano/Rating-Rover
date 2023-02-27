@@ -156,3 +156,5 @@ with open("urls.txt",'r', encoding="utf-8") as urlList, open('finals.csv','w+', 
             res.write(message)
             print(message)
             #result left
+
+os.startfile('finals.csv')

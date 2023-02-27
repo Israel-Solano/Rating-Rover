@@ -125,3 +125,5 @@ with open("urls.txt",'r', encoding="utf-8") as urlList, open('finals.csv','w+', 
                 message = "%.2f, %.2f, %d, %s, %s, https://www.amazon.com/dp/%s/, %s\n"%(complete/100, half/50, lowest, titStar, starNum, id, title)
             res.write(message)
             print(message)
+
+os.startfile('finals.csv')
