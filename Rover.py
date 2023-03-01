@@ -21,6 +21,7 @@ headers ={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:87.0) Gecko
 
 chrome_options, line = Options(), ""
 chrome_options.add_argument('--log-level=3')
+chrome_options.add_argument('--ignore-certificate-errors') #chrome_options.add_argument('--ignore-ssl-errors')
 chrome_options.add_argument("--headless")
 driver = webdriver.Chrome(options=chrome_options)
 actions = ActionChains(driver)
