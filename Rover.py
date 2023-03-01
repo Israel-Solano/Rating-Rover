@@ -21,6 +21,7 @@ headers ={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:87.0) Gecko
 
 chrome_options, line = Options(), ""
 chrome_options.add_argument('--log-level=3')
+chrome_options.add_experimental_option('excludeSwitches', ['enable-logging'])
 chrome_options.add_argument('--ignore-certificate-errors') #chrome_options.add_argument('--ignore-ssl-errors')
 chrome_options.add_argument("--headless")
 driver = webdriver.Chrome(options=chrome_options)
@@ -38,9 +39,11 @@ def move():
         sleep(0.2)
         i += 1
 
+print("Getting first listings...")
 driver.get(url) #Something about get bothers it
 move()
 HTML = str(driver.page_source.encode("utf-8"))
+print("Getting last listings...")
 driver.get(url+"/ref=zg_bs_pg_2?_encoding=UTF8&pg=2")
 move()
 HTML += str(driver.page_source.encode("utf-8"))
