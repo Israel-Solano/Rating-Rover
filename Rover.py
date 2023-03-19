@@ -13,9 +13,9 @@ if __name__ == "__main__":
     curr_dir = os.path.dirname(os.path.realpath(__file__))
     os.chdir(curr_dir)
 
-url = input("Enter the url of your best-seller page:").split('/ref=')[0]
+#url = input("Enter the url of your best-seller page:").split('/ref=')[0]
 #Uncomment if you would prefer to write in your best seller category url
-#url = 'https://www.amazon.com/Best-Sellers-Video-Games-PC-Games-Accessories/zgbs/videogames/229575/ref=zg_bs_unv_videogames_2_318813011_1'
+url = 'https://www.amazon.com/Best-Sellers-Kitchen-Dining-Salad-Bowls/zgbs/kitchen/367122011/ref=zg_bs_nav_kitchen_5_367107011'
 
 headers ={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:87.0) Gecko/20100101 Firefox/87.0", "Accept-Encoding":"gzip, deflate, br", "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "DNT":"1","Connection":"close", "Upgrade-Insecure-Requests":"1"}
 
@@ -63,21 +63,18 @@ ua = fake_useragent.UserAgent()
 # Create an Extractor by reading from the YAML file
 
 def scrape(url):  
-    sleep(0.2)
+    sleep(0.25)
     e = Extractor.from_yaml_file('selectors.yml')
-    headers = {"User-Agent": ua.random, "Accept-Encoding":"gzip, deflate", "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "DNT":"1","Connection":"close", "Upgrade-Insecure-Requests":"1"}
+    headers = {"User-Agent": ua.random, "Accept-Encoding":"gzip, deflate", "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "DNT":"1","Upgrade-Insecure-Requests":"1", "allow_redirects":"False"}   
 
     # Download the page using requests
     try:
         r = requests.get(url, headers=headers)
     except Exception:
-        sleep(5)
-        print("issues")
+        sleep(10)
+        print("issues with " + url)
         return e.extract("")
-    # Simple check to check if page was blocked (Usually 503)
-    if r.status_code > 500:
-        print("Page %s must have been blocked by Amazon as the status code was %d"%(url,r.status_code))
-        return None
+
     # Pass the HTML of the page and create 
     #print(re.sub(r'[^\x00-\x7F]+', '', r.text))
     return e.extract(r.text)
@@ -85,7 +82,7 @@ def scrape(url):
 with open("urls.txt",'r', encoding="utf-8") as urlList, open('finals.csv','w+', encoding="utf-8") as res:
     category = str(re.search('text-bold">Best Sellers in (.*?)</', line).group(1))
     pieces = line.split('class="a-icon-alt')
-    top = "%s, %s, %d results\n"%(category, url,len(pieces))
+    top = "%s, %s, %d results"%(category, url,len(pieces))
     res.write(top)
     print("\n%s"%top)
     #res.write("ranking, price, recent rating, immediate rating, bottom, claim rating, rating #, link, title\n")
@@ -93,24 +90,28 @@ with open("urls.txt",'r', encoding="utf-8") as urlList, open('finals.csv','w+', 
     num = 0
     for url in urlList.readlines():
         num += 1
-        total, complete, i, l, half, lowest, passed , list = 0.0, 0.0, 1.0, 0, 0, 50.0, True, []
+        total, complete, i, l, half, lowest, passed , list = 0.0, 0.0, 1, 0, 0, 50.0, True, []
         fixed = url[:len(url) - 1]
         id = url[39:49]
-        print("Downloading %s, "%id+str(num))
+        print("\nDownloading %s, "%id+str(num))
 
-        try:
-            sleep(0.1)
-            checkNum = str(re.search(', (.*?) with', scrape(fixed)["review_count"]).group(1)).replace(",", "")
-            if int(checkNum) < 101:
-                print('Only ' + checkNum+' reviews\n')
-                continue
-        
-        except TypeError as e:
-            print('Review Number Error')
+        while l < 10:
+            try:
+                first = scrape(fixed)["review_count"]
+                checkNum = str(re.search(', (.*?) with', first).group(1)).replace(",", "")
+                if int(checkNum) < 101:
+                    print('Only ' + checkNum+' reviews')
+                    passed = False
+                    i = 11
+                break
+            except TypeError as e:
+                print('Review Number Error')
+                l += 1
         
         while i < 11:
             if l > 9:
                 passed = False
+                res.write(" failed to download " + fixed + "\n")
                 break
             data = scrape(fixed)
             try:
@@ -129,17 +130,19 @@ with open("urls.txt",'r', encoding="utf-8") as urlList, open('finals.csv','w+', 
                         if len(list) == 10:
                             total -= list.pop(0)
                             if total < 30:
-                                print('Failed on page: ' + str(i) + '\n')
+                                print('Failed on page: ' + str(i))
                                 i = 11
                                 passed = False
                                 break
                             if total < lowest:
                                 lowest = total        
-                    fixed = 'https://www.amazon.com'+data['next_page']
+                    fixed = "https://www.amazon.com/product-reviews/" + id + "/?pageNumber=" + \
+                        str(i + 1) + "&reviewerType=avp_only_reviews&sortBy=recent"
+                    #print(fixed)
                     i += 1
             except TypeError as te:
                 print('Retrying page ' + str(i))
-                sleep (1)
+                sleep(10)
                 l += 1
             except AttributeError as huh:
                 passed = False

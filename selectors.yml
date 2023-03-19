@@ -25,9 +25,6 @@ reviews:
             css: 'div.a-row:nth-of-type(2) > a.a-link-normal:nth-of-type(1)'
             type: Attribute
             attribute: title
-next_page:
-    css: 'li.a-last a'
-    type: Link
 review_count:
     css: 'div[data-hook="cr-filter-info-review-rating-count"]'
     type: Text
