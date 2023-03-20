@@ -13,9 +13,9 @@ if __name__ == "__main__":
     curr_dir = os.path.dirname(os.path.realpath(__file__))
     os.chdir(curr_dir)
 
-#url = input("Enter the url of your best-seller page:").split('/ref=')[0]
+url = input("Enter the url of your best-seller page:").split('/ref=')[0]
 #Uncomment if you would prefer to write in your best seller category url
-url = 'https://www.amazon.com/Best-Sellers-Kitchen-Dining-Salad-Bowls/zgbs/kitchen/367122011/ref=zg_bs_nav_kitchen_5_367107011'
+#url = 'https://www.amazon.com/Best-Sellers-Kitchen-Dining-Salad-Bowls/zgbs/kitchen/367122011/ref=zg_bs_nav_kitchen_5_367107011'
 
 headers ={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:87.0) Gecko/20100101 Firefox/87.0", "Accept-Encoding":"gzip, deflate, br", "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "DNT":"1","Connection":"close", "Upgrade-Insecure-Requests":"1"}
 
@@ -82,7 +82,7 @@ def scrape(url):
 with open("urls.txt",'r', encoding="utf-8") as urlList, open('finals.csv','w+', encoding="utf-8") as res:
     category = str(re.search('text-bold">Best Sellers in (.*?)</', line).group(1))
     pieces = line.split('class="a-icon-alt')
-    top = "%s, %s, %d results"%(category, url,len(pieces))
+    top = "%s, %s, %d results\n"%(category, url,len(pieces))
     res.write(top)
     print("\n%s"%top)
     #res.write("ranking, price, recent rating, immediate rating, bottom, claim rating, rating #, link, title\n")
