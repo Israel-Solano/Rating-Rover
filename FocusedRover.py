@@ -18,24 +18,20 @@ ua = fake_useragent.UserAgent()
 
 
 def scrape(url):  
+    sleep(0.25)
     e = Extractor.from_yaml_file('selectors.yml')
-    headers = {"User-Agent": ua.random, "Accept-Encoding":"gzip, deflate", "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "DNT":"1","Connection":"close", "Upgrade-Insecure-Requests":"1"}
+    headers = {"User-Agent": ua.random, "Accept-Encoding":"gzip, deflate", "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "DNT":"1","Upgrade-Insecure-Requests":"1", "allow_redirects":"False"}   
 
     # Download the page using requests
     try:
         r = requests.get(url, headers=headers)
     except Exception:
-        sleep(5)
-        print("issues")
+        sleep(10)
+        print("issues with " + url)
         return e.extract("")
-    # Simple check to check if page was blocked (Usually 503)
-    if r.status_code > 500:
-        if "To discuss automated access to Amazon data please contact" in r.text:
-            print("Page %s was blocked by Amazon. Please try using better proxies\n"%url)
-        else:
-            print("Page %s must have been blocked by Amazon as the status code was %d"%(url,r.status_code))
-        return None
+
     # Pass the HTML of the page and create 
+    #print(re.sub(r'[^\x00-\x7F]+', '', r.text))
     return e.extract(r.text)
 
 #, open('data.csv','w', encoding="utf-8") as outfile
@@ -44,7 +40,7 @@ with open("urls.txt",'r', encoding="utf-8") as urlList, open('finals.csv','w+', 
     num = 0
     for url in urlList.readlines():
         num += 1
-        total, complete, i, l, half, lowest, passed, dp, list = 0.0, 0.0, 1.0, 0, 0, 50.0, True, False, []
+        total, complete, i, l, half, lowest, passed, dp, list = 0.0, 0.0, 1, 0, 0, 50.0, True, False, []
             
         
         fixed = url[:len(url) - 1]
@@ -68,7 +64,7 @@ with open("urls.txt",'r', encoding="utf-8") as urlList, open('finals.csv','w+', 
                 print('Only ' + checkNum+' reviews\n')
                 continue
         
-        except AttributeError as e:
+        except Exception as E:
             print('Review Number Error')
             continue
         
@@ -100,19 +96,20 @@ with open("urls.txt",'r', encoding="utf-8") as urlList, open('finals.csv','w+', 
                                 break
                             if total < lowest:
                                 lowest = total        
-                    fixed = 'https://www.amazon.com'+data['next_page']
+                    fixed = "https://www.amazon.com/product-reviews/" + id + "/?pageNumber=" + \
+                        str(i + 1) + "&reviewerType=avp_only_reviews&sortBy=recent"
                     #print(fixed)
                     i += 1
             except TypeError as te:
                 print('Retrying page ' + str(i))
-                sleep (1)
+                sleep(10)
                 l += 1
             except AttributeError as huh:
                 passed = False
                 print('Too few on page ' + str(i))
                 break
             if(i == 6):
-                half = complete    
+                half = complete      
         if passed:
             #possibly add .split('</span></div></a></div><div class="zg-mlt-list-type aok-hidden">')[-1]
             title = re.sub(r'[^\x00-\x7F]+', '', data["product_title"]).replace(",","")
