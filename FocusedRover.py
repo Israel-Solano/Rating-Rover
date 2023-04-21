@@ -54,7 +54,7 @@ with open("urls.txt",'r', encoding="utf-8") as urlList, open('finals.csv','w+', 
             dp = True
             fixed = "https://www.amazon.com/product-reviews/" + id + "/?pageNumber=1&reviewerType=avp_only_reviews&sortBy=recent"
         
-        print("Downloading %s, "%fixed+str(num))
+        print("Downloading %s, "%id+str(num))
 
         headers ={"User-Agent":ua.random, "Accept-Encoding":"gzip, deflate", "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "DNT":"1","Connection":"close", "Upgrade-Insecure-Requests":"1"}
         try:
