@@ -41,7 +41,6 @@ with open("urls.txt",'r', encoding="utf-8") as urlList, open('finals.csv','w+', 
     for url in urlList.readlines():
         num += 1
         total, complete, i, l, half, lowest, passed, dp, list = 0.0, 0.0, 1, 0, 0, 50.0, True, False, []
-            
         
         fixed = url[:len(url) - 1]
         id = url[39:49]
@@ -56,22 +55,23 @@ with open("urls.txt",'r', encoding="utf-8") as urlList, open('finals.csv','w+', 
         
         print("Downloading %s, "%id+str(num))
 
-        headers ={"User-Agent":ua.random, "Accept-Encoding":"gzip, deflate", "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "DNT":"1","Connection":"close", "Upgrade-Insecure-Requests":"1"}
-        try:
-            sleep(0.15)
-            checkNum = str(re.search(', (.*?) with', scrape(fixed)["review_count"]).group(1)).replace(",", "")
-            if int(checkNum) < 101:
-                print('Only ' + checkNum+' reviews\n')
-                continue
-        
-        except Exception as E:
-            print('Review Number Error')
-            continue
+        while l < 10:
+            try:
+                first = scrape(fixed)["review_count"]
+                checkNum = str(re.search(', (.*?) with', first).group(1)).replace(",", "")
+                if int(checkNum) < 101:
+                    print('Only ' + checkNum+' reviews')
+                    passed = False
+                    i = 11
+                break
+            except TypeError as e:
+                print('Review Number Error')
+                l += 1
         
         while i < 11:
-            sleep(0.15)
             if l > 9:
                 passed = False
+                res.write(" failed to download " + fixed + "\n")
                 break
             data = scrape(fixed)
             try:
@@ -90,7 +90,7 @@ with open("urls.txt",'r', encoding="utf-8") as urlList, open('finals.csv','w+', 
                         if len(list) == 10:
                             total -= list.pop(0)
                             if total < 15:
-                                print('Failed on page: ' + str(i) + '\n')
+                                print('Failed on page: ' + str(i))
                                 i = 11
                                 passed = False
                                 break
