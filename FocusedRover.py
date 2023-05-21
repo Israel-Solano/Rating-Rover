@@ -89,7 +89,7 @@ with open("urls.txt",'r', encoding="utf-8") as urlList, open('finals.csv','w+', 
 
                         if len(list) == 10:
                             total -= list.pop(0)
-                            if total < 15:
+                            if total < 20:
                                 print('Failed on page: ' + str(i))
                                 i = 11
                                 passed = False
