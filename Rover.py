@@ -13,13 +13,14 @@ if __name__ == "__main__":
     curr_dir = os.path.dirname(os.path.realpath(__file__))
     os.chdir(curr_dir)
 
+ua = fake_useragent.UserAgent()
 url = input("Enter the url of your best-seller page:").split('/ref=')[0]
 #Uncomment if you would prefer to write in your best seller category url
-#url = 'https://www.amazon.com/Best-Sellers-Kitchen-Dining-Salad-Bowls/zgbs/kitchen/367122011/ref=zg_bs_nav_kitchen_5_367107011'
+#url = 'https://www.amazon.com/Best-Sellers-Clothing-Shoes-Jewelry-Womens-Swim-Pants/zgbs/fashion/23709657011/ref=zg_bs_nav_fashion_4_15835971'
 
-headers ={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:87.0) Gecko/20100101 Firefox/87.0", "Accept-Encoding":"gzip, deflate, br", "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "DNT":"1","Connection":"close", "Upgrade-Insecure-Requests":"1"}
+headers ={"User-Agent":ua.random, "Accept-Encoding":"gzip, deflate, br", "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "DNT":"1","Connection":"close", "Upgrade-Insecure-Requests":"1"}
 
-chrome_options, line = Options(), ""
+chrome_options, line , m = Options(), "", 1
 chrome_options.add_argument('--log-level=3')
 chrome_options.add_experimental_option('excludeSwitches', ['enable-logging'])
 chrome_options.add_argument('--ignore-certificate-errors') #chrome_options.add_argument('--ignore-ssl-errors')
@@ -40,13 +41,21 @@ def move():
         i += 1
 
 print("Getting first listings...")
-driver.get(url) #Something about get bothers it
-move()
-HTML = str(driver.page_source.encode("utf-8"))
-print("Getting last listings...")
-driver.get(url+"/ref=zg_bs_pg_2?_encoding=UTF8&pg=2")
-move()
-HTML += str(driver.page_source.encode("utf-8"))
+while m < 10:
+    try:
+        driver.get(url) #Something about get bothers it
+        move()
+        HTML = str(driver.page_source.encode("utf-8"))
+        print("Getting last listings...")
+        driver.get(url+"/ref=zg_bs_pg_2?_encoding=UTF8&pg=2")
+        move()
+        HTML += str(driver.page_source.encode("utf-8"))
+        break
+    except Exception as e:
+        print('Damaged, trying again...')
+        sleep (10)
+        m += 1
+
 driver.quit()
 
 #add the data you got to a file
@@ -59,7 +68,6 @@ with open('bestseller.html', "r", encoding="utf-8") as inFile, open('urls.txt', 
     outfile.write('?pageNumber=1&reviewerType=avp_only_reviews&sortBy=recent\nhttps://www.amazon.com/product-reviews'.join(re.findall('-reviews(.*?)ref', line)))
     outfile.write('?pageNumber=1&reviewerType=avp_only_reviews&sortBy=recent\n')
 
-ua = fake_useragent.UserAgent()
 # Create an Extractor by reading from the YAML file
 
 def scrape(url):  
