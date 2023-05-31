@@ -12,6 +12,10 @@ from tkinter import *
 from tkinter.ttk import Treeview
 import threading
 
+if __name__ == "__main__":
+    curr_dir = os.path.dirname(os.path.realpath(__file__))
+    os.chdir(curr_dir)
+    
 class ProgressBar:
     def __init__(self, total):
         self.progress = 0
@@ -24,9 +28,6 @@ class ProgressBar:
         progress_label.config(text=progress_str)
         window.update_idletasks()
 
-if __name__ == "__main__":
-    curr_dir = os.path.dirname(os.path.realpath(__file__))
-    os.chdir(curr_dir)
 
 def scrape_site(url, limiter):
     ua = fake_useragent.UserAgent()
@@ -206,33 +207,36 @@ def scrape_site(url, limiter):
             
             progress_bar.update_progress()
 
-    return data_list
+    return data_list, category
 
 
-def display_results(data, urly):
+def display_results(data, urly, cat):
     # Create the Treeview widget
     treeview = Treeview(window)
-    treeview["columns"] = ("#0", "#1", "#2", "#3", "#4", "#5", "#6", "#7")
+    treeview["columns"] = ("#0", "#1", "#2", "#3", "#4", "#5", "#6", "#7", "#8")
     treeview.pack()
 
     # Adjust column widths
     treeview.column("#0", width=50)  # Adjust the width of column 0
     treeview.column("#1", width=50)  # Adjust the width of column 1
     treeview.column("#2", width=50)  # Adjust the width of column 2
-    treeview.column("#3", width=50)  # Adjust the width of column 0
-    treeview.column("#4", width=50)  # Adjust the width of column 1
-    treeview.column("#5", width=50)  # Adjust the width of column 2
-    treeview.column("#6", width=50)  # Adjust the width of column 2
+    treeview.column("#3", width=50)  # Adjust the width of column 3
+    treeview.column("#4", width=50)  # Adjust the width of column 4
+    treeview.column("#5", width=50)  # Adjust the width of column 5
+    treeview.column("#6", width=50)  # Adjust the width of column 5
+    treeview.column("#7", width=50)  # Adjust the width of column 6 
+    treeview.column("#8", width=100) # Adjust the width of column 
     
     # Define the columns
     treeview.heading("#0", text="Ranking")
-    treeview.heading("#1", text="100 Ave")
-    treeview.heading("#2", text="50 Ave")
-    treeview.heading("#3", text="Lowest")
-    treeview.heading("#4", text="TitStar")
-    treeview.heading("#5", text="StarNum")
-    treeview.heading("#6", text="Link")
-    treeview.heading("#7", text="Title")
+    treeview.heading("#1", text="Price")
+    treeview.heading("#2", text="100 Ave")
+    treeview.heading("#3", text="50 Ave")
+    treeview.heading("#4", text="Lowest")
+    treeview.heading("#5", text="TitStar")
+    treeview.heading("#6", text="StarNum")
+    treeview.heading("#7", text="Link")
+    treeview.heading("#8", text="Title")
 
     # Insert the data into the treeview
     for row in data:
@@ -240,7 +244,7 @@ def display_results(data, urly):
 
     # Copy to Clipboard Button
     def copy_to_clipboard():
-        clipboard_data = "%s\t %s\t %d results\n"%(urly, "", len(data)) #category, len(pieces))
+        clipboard_data = "%s\t %s\t %d results\n"%(cat, urly, len(data)) #category, len(pieces))
         for row in data:
             clipboard_data += "\t".join(map(str, row)) + "\n"
         window.clipboard_clear()
@@ -251,16 +255,16 @@ def display_results(data, urly):
 
 def scrape_and_display(url, inty):
     # Scrape the data
-    data = scrape_site(url, inty)
+    data, cat = scrape_site(url, inty)
 
     # Update the GUI with the scraped data
-    window.after(0, display_results, data, url)
+    window.after(0, display_results, data, url, cat)
     window.after(0, output_text.insert, "end", "Scraping completed. Results displayed.\n")
     window.after(0, output_text.update)
 # Function to handle button click
 def handle_scrape():
     url = url_entry.get()
-    inty = int_entry.get()
+    inty = int(int_entry.get())
     output_text.delete(1.0, "end")  # Clear previous output
     output_text.insert("end", "Scraping in progress...\n")
     output_text.update()
