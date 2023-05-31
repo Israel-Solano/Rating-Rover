@@ -23,7 +23,6 @@ class ProgressBar:
         progress_str = "[{}{}] {}%".format("=" * (percent // 2), " " * ((100 - percent) // 2), percent)
         progress_label.config(text=progress_str)
         window.update_idletasks()
-        
 
 if __name__ == "__main__":
     curr_dir = os.path.dirname(os.path.realpath(__file__))
@@ -119,7 +118,7 @@ def scrape_site(url):
     with open("urls.txt",'r', encoding="utf-8") as urlList, open('finals.csv','w+', encoding="utf-8") as res:
         category = str(re.search('text-bold">Best Sellers in (.*?)</', line).group(1))
         pieces = line.split('class="a-icon-alt')
-        top = "%s, %s, %d results\n"%(category, url,len(pieces))
+        top = "%s, %d results\n"%(category, len(pieces))
         res.write(top)
         output_text.insert("end", "\n%s" % top)
         output_text.update()
@@ -209,12 +208,22 @@ def scrape_site(url):
 
     return data_list
 
+
 def display_results(data, urly):
     # Create the Treeview widget
     treeview = Treeview(window)
     treeview["columns"] = ("#0", "#1", "#2", "#3", "#4", "#5", "#6", "#7")
     treeview.pack()
 
+    # Adjust column widths
+    treeview.column("#0", width=50)  # Adjust the width of column 0
+    treeview.column("#1", width=50)  # Adjust the width of column 1
+    treeview.column("#2", width=50)  # Adjust the width of column 2
+    treeview.column("#3", width=50)  # Adjust the width of column 0
+    treeview.column("#4", width=50)  # Adjust the width of column 1
+    treeview.column("#5", width=50)  # Adjust the width of column 2
+    treeview.column("#6", width=50)  # Adjust the width of column 2
+    
     # Define the columns
     treeview.heading("#0", text="Result")
     treeview.heading("#1", text="Complete / 100")
@@ -222,7 +231,7 @@ def display_results(data, urly):
     treeview.heading("#3", text="Lowest")
     treeview.heading("#4", text="TitStar")
     treeview.heading("#5", text="StarNum")
-    treeview.heading("#6", text="ID")
+    treeview.heading("#6", text="Link")
     treeview.heading("#7", text="Title")
 
     # Insert the data into the treeview
@@ -231,7 +240,7 @@ def display_results(data, urly):
 
     # Copy to Clipboard Button
     def copy_to_clipboard():
-        clipboard_data = "%s\t %s\t %d results\n"%(urly, "", 3) #category, len(pieces))
+        clipboard_data = "%s\t %s\t %d results\n"%(urly, "", len(data)) #category, len(pieces))
         for row in data:
             clipboard_data += "\t".join(map(str, row)) + "\n"
         window.clipboard_clear()
@@ -275,7 +284,7 @@ progress_label = Label(window, text="", font=("Arial", 12), pady=10)
 progress_label.pack()
 
 # Scrape Button
-scrape_button = Button(window, text="Scrape", command=handle_scrape, bg="gray", fg="white")  # Set button colors
+scrape_button = Button(window, text="Scrape", command=handle_scrape, bg="white", fg="black")  # Set button colors
 scrape_button.pack()
 
 # Output Text
