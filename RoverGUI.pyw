@@ -8,7 +8,7 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.chrome.options import Options
 import os
 import fake_useragent
-from tkinter import Tk, Label, Entry, Button, Text, Scrollbar
+from tkinter import *
 from tkinter.ttk import Treeview
 import threading
 
@@ -28,7 +28,7 @@ if __name__ == "__main__":
     curr_dir = os.path.dirname(os.path.realpath(__file__))
     os.chdir(curr_dir)
 
-def scrape_site(url):
+def scrape_site(url, limiter):
     ua = fake_useragent.UserAgent()
     url = url.split('/ref=')[0]
     # Uncomment if you would prefer to write in your best seller category URL
@@ -170,7 +170,7 @@ def scrape_site(url):
 
                             if len(list) == 10:
                                 total -= list.pop(0)
-                                if total < 30:
+                                if total < limiter:
                                     i = 11
                                     passed = False
                                     break
@@ -225,9 +225,9 @@ def display_results(data, urly):
     treeview.column("#6", width=50)  # Adjust the width of column 2
     
     # Define the columns
-    treeview.heading("#0", text="Result")
-    treeview.heading("#1", text="Complete / 100")
-    treeview.heading("#2", text="Half / 50")
+    treeview.heading("#0", text="Ranking")
+    treeview.heading("#1", text="100 Ave")
+    treeview.heading("#2", text="50 Ave")
     treeview.heading("#3", text="Lowest")
     treeview.heading("#4", text="TitStar")
     treeview.heading("#5", text="StarNum")
@@ -249,9 +249,9 @@ def display_results(data, urly):
     copy_button = Button(window, text="Copy to Clipboard", command=copy_to_clipboard, bg="gray", fg="white")
     copy_button.pack()
 
-def scrape_and_display(url):
+def scrape_and_display(url, inty):
     # Scrape the data
-    data = scrape_site(url)
+    data = scrape_site(url, inty)
 
     # Update the GUI with the scraped data
     window.after(0, display_results, data, url)
@@ -260,12 +260,13 @@ def scrape_and_display(url):
 # Function to handle button click
 def handle_scrape():
     url = url_entry.get()
+    inty = int_entry.get()
     output_text.delete(1.0, "end")  # Clear previous output
     output_text.insert("end", "Scraping in progress...\n")
     output_text.update()
 
     # Create a new thread for the scraping process
-    scrape_thread = threading.Thread(target=scrape_and_display, args=(url,))
+    scrape_thread = threading.Thread(target=scrape_and_display, args=(url,inty,))
     scrape_thread.start()
 
 
@@ -277,8 +278,14 @@ window.configure(bg="black")  # Set background color to black
 # URL Label and Entry
 url_label = Label(window, text="Enter the URL:", bg="black", fg="white")  # Set label colors
 url_label.pack()
-url_entry = Entry(window)
+url_entry = Entry(window, width = 90)
 url_entry.pack()
+
+# Val Label and Entry
+int_label = Label(window, text="Enter cutoff integer(30+ ideal):", bg="black", fg="white")  # Set label colors
+int_label.pack()
+int_entry = Entry(window, width = 5)
+int_entry.pack()
 
 progress_label = Label(window, text="", font=("Arial", 12), pady=10)
 progress_label.pack()
