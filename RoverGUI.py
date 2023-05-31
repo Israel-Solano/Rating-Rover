@@ -9,7 +9,21 @@ from selenium.webdriver.chrome.options import Options
 import os
 import fake_useragent
 from tkinter import Tk, Label, Entry, Button, Text, Scrollbar
-from tkinter.ttk import Treeview, Progressbar
+from tkinter.ttk import Treeview
+import threading
+
+class ProgressBar:
+    def __init__(self, total):
+        self.progress = 0
+        self.total = total
+
+    def update_progress(self):
+        self.progress += 1
+        percent = int((self.progress / self.total) * 100)
+        progress_str = "[{}{}] {}%".format("=" * (percent // 2), " " * ((100 - percent) // 2), percent)
+        progress_label.config(text=progress_str)
+        window.update_idletasks()
+        
 
 if __name__ == "__main__":
     curr_dir = os.path.dirname(os.path.realpath(__file__))
@@ -112,21 +126,22 @@ def scrape_site(url):
         #res.write("ranking, price, recent rating, immediate rating, bottom, claim rating, rating #, link, title\n")
         # writer = csv.DictWriter(outfile, fieldnames=["title","date","variant","rating","product","url"],quoting=csv.QUOTE_ALL).writeheader()
         num, data_list = 0, []
+        total_urls = sum(1 for _ in urlList)
+        urlList.seek(0)  # Reset file pointer to the beginning
+        
+        progress_bar = ProgressBar(total_urls)
+        
         for url in urlList.readlines():
             num += 1
             total, complete, i, l, half, lowest, passed , list= 0.0, 0.0, 1, 0, 0, 50.0, True, []
             fixed = url[:len(url) - 1]
             id = url[39:49]
-            output_text.insert("end", "\nDownloading %s, %s\n" % (fixed, str(num)))
-            output_text.update()
 
             while l < 10:
                 try:
                     first = scrape(fixed)["review_count"]
                     checkNum = str(re.search(', (.*?) with', first).group(1)).replace(",", "")
                     if int(checkNum) < 101:
-                        output_text.insert("end", 'Only ' + checkNum + ' reviews\n')
-                        output_text.update()
                         passed = False
                         i = 11
                     break
@@ -157,8 +172,6 @@ def scrape_site(url):
                             if len(list) == 10:
                                 total -= list.pop(0)
                                 if total < 30:
-                                    output_text.insert("end", 'Failed on page: ' + str(i) + "\n")
-                                    output_text.update()
                                     i = 11
                                     passed = False
                                     break
@@ -175,8 +188,6 @@ def scrape_site(url):
                     l += 1
                 except AttributeError as huh:
                     passed = False
-                    output_text.insert("end", 'Too few on page ' + str(i) + "\n")
-                    output_text.update()
                     break
                 if(i == 6):
                     half = complete    
@@ -191,10 +202,10 @@ def scrape_site(url):
                     result = "N/A"
                 message = "%d, $%s, %.2f, %.2f, %d, %s, %s, https://www.amazon.com/dp/%s/, %s\n"%(num, result, complete/100, half/50, lowest, titStar, starNum, id, title)
                 res.write(message)
-                output_text.insert("end", message)
-                output_text.update()# Append the data to the list
                 data_list.append([num, result, complete / 100, half / 50, lowest, titStar, starNum, "https://www.amazon.com/dp/%s/"%id, title])
                 #result left
+            
+            progress_bar.update_progress()
 
     return data_list
 
@@ -229,18 +240,25 @@ def display_results(data, urly):
     copy_button = Button(window, text="Copy to Clipboard", command=copy_to_clipboard, bg="gray", fg="white")
     copy_button.pack()
 
+def scrape_and_display(url):
+    # Scrape the data
+    data = scrape_site(url)
 
-
+    # Update the GUI with the scraped data
+    window.after(0, display_results, data, url)
+    window.after(0, output_text.insert, "end", "Scraping completed. Results displayed.\n")
+    window.after(0, output_text.update)
 # Function to handle button click
 def handle_scrape():
     url = url_entry.get()
     output_text.delete(1.0, "end")  # Clear previous output
     output_text.insert("end", "Scraping in progress...\n")
     output_text.update()
-    data = scrape_site(url)
-    display_results(data, url)
-    output_text.insert("end", "Scraping completed. Results displayed.\n")
-    output_text.update()
+
+    # Create a new thread for the scraping process
+    scrape_thread = threading.Thread(target=scrape_and_display, args=(url,))
+    scrape_thread.start()
+
 
 # Create the GUI window
 window = Tk()
@@ -252,6 +270,9 @@ url_label = Label(window, text="Enter the URL:", bg="black", fg="white")  # Set 
 url_label.pack()
 url_entry = Entry(window)
 url_entry.pack()
+
+progress_label = Label(window, text="", font=("Arial", 12), pady=10)
+progress_label.pack()
 
 # Scrape Button
 scrape_button = Button(window, text="Scrape", command=handle_scrape, bg="gray", fg="white")  # Set button colors
