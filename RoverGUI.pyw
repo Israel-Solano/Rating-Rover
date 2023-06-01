@@ -182,7 +182,7 @@ def scrape_site(url, limiter):
                         #print(fixed)
                         i += 1
                 except TypeError as te:
-                    output_text.insert("end", 'Retrying page ' + str(i) + "\n")
+                    output_text.insert("end", 'Retrying page ' + str(i) + " from listing #" + str(num) + "\n")
                     output_text.update()
                     sleep(10)
                     l += 1
@@ -202,12 +202,14 @@ def scrape_site(url, limiter):
                     result = "N/A"
                 message = "%d, $%s, %.2f, %.2f, %d, %s, %s, https://www.amazon.com/dp/%s/, %s\n"%(num, result, complete/100, half/50, lowest, titStar, starNum, id, title)
                 res.write(message)
-                data_list.append([num, result, complete / 100, half / 50, lowest, titStar, starNum, "https://www.amazon.com/dp/%s/"%id, title])
+                data_list.append([num, result, complete / 100, half / 50, lowest, titStar, int(starNum), "https://www.amazon.com/dp/%s/"%id, title])
                 #result left
             
             progress_bar.update_progress()
 
-    return data_list, category
+    # Sort the data by "Starnum" in descending order
+
+    return sorted(data_list, key=lambda x: (x[6]), reverse=True), category
 
 
 def display_results(data, urly, cat):
@@ -257,10 +259,11 @@ def scrape_and_display(url, inty):
     # Scrape the data
     data, cat = scrape_site(url, inty)
 
-    # Update the GUI with the scraped data
+    # Update the GUI with the sorted data
     window.after(0, display_results, data, url, cat)
     window.after(0, output_text.insert, "end", "Scraping completed. Results displayed.\n")
     window.after(0, output_text.update)
+
 # Function to handle button click
 def handle_scrape():
     url = url_entry.get()
