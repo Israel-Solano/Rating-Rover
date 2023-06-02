@@ -255,9 +255,29 @@ def display_results(data, urly, cat):
     copy_button = Button(window, text="Copy to Clipboard", command=copy_to_clipboard, bg="gray", fg="white")
     copy_button.pack()
 
-def scrape_and_display(url, inty):
+def remove_low_averages(data_list):
+    reduced_list = []
+    max_price = 0
+    max_quantity = 0
+
+    for row in data_list:
+        price = row[2]
+        quantity = row[3]
+
+        if price >= max_price and quantity >= max_quantity:
+            reduced_list.append(row)
+            max_price = price
+            max_quantity = quantity
+
+    return reduced_list
+
+
+def scrape_and_display(url, inty, remover):
     # Scrape the data
     data, cat = scrape_site(url, inty)
+    
+    if remover:
+        data = remove_low_averages(data)
 
     # Update the GUI with the sorted data
     window.after(0, display_results, data, url, cat)
@@ -268,12 +288,13 @@ def scrape_and_display(url, inty):
 def handle_scrape():
     url = url_entry.get()
     inty = int(int_entry.get())
+    scrape_checked = reduction_var.get()
     output_text.delete(1.0, "end")  # Clear previous output
     output_text.insert("end", "Scraping in progress...\n")
     output_text.update()
 
     # Create a new thread for the scraping process
-    scrape_thread = threading.Thread(target=scrape_and_display, args=(url,inty,))
+    scrape_thread = threading.Thread(target=scrape_and_display, args=(url,inty, scrape_checked,))
     scrape_thread.start()
 
 
@@ -286,13 +307,20 @@ window.configure(bg="black")  # Set background color to black
 url_label = Label(window, text="Enter the URL:", bg="black", fg="white")  # Set label colors
 url_label.pack()
 url_entry = Entry(window, width = 90)
+url_entry.insert(0, "https://www.amazon.com/Best-Sellers-Clothing-Shoes-Jewelry-Womens-Swim-Pants/zgbs/fashion/23709657011/ref=zg_bs_nav_fashion_4_15835971")
 url_entry.pack()
+
+# Add a checkbox widget
+reduction_var = BooleanVar()
+reduction_checkbox = Checkbutton(window, text="Apply Reduction", variable=reduction_var, bg="black", fg="green")
+reduction_checkbox.pack()
 
 # Val Label and Entry
 int_label = Label(window, text="Enter cutoff integer(30+ ideal):", bg="black", fg="white")  # Set label colors
 int_label.pack()
 int_entry = Entry(window, width = 5)
 int_entry.pack()
+int_entry.insert(0, "30")
 
 progress_label = Label(window, text="", font=("Arial", 12), pady=10)
 progress_label.pack()
