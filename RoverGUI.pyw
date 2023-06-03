@@ -244,15 +244,35 @@ def display_results(data, urly, cat):
     for row in data:
         treeview.insert("", "end", values=row)
 
+    display_results.reduced_data = None
+    # Function to reduce rows
+    def reduce_rows():
+        reduced_data = remove_low_averages(data)
+        treeview.delete(*treeview.get_children())  # Clear existing rows
+        for row in reduced_data:
+            treeview.insert("", "end", values=row)
+        # Update the reduced_data attribute of the display_results function
+        display_results.reduced_data = reduced_data
+
+
+    # Reduce Rows Button
+    reduce_button = Button(window, text="Reduce Rows", command=reduce_rows, bg="gray", fg="white")
+    reduce_button.pack()
+
     # Copy to Clipboard Button
     def copy_to_clipboard():
-        clipboard_data = "%s\t %s\t %d results\n"%(cat, urly, len(data)) #category, len(pieces))
-        for row in data:
-            clipboard_data += "\t".join(map(str, row)) + "\n"
+        clipboard_data = "%s\t %s\t %d results\n" % (cat, urly, len(data))
+        if display_results.reduced_data:
+            for row in display_results.reduced_data:
+                clipboard_data += "\t".join(map(str, row)) + "\n"
+        else:
+            for row in data:
+                clipboard_data += "\t".join(map(str, row)) + "\n"
         window.clipboard_clear()
         window.clipboard_append(clipboard_data)
 
-    copy_button = Button(window, text="Copy to Clipboard", command=copy_to_clipboard, bg="gray", fg="white")
+
+    copy_button = Button(window, text="Copy to Clipboard", command=lambda: copy_to_clipboard(), bg="gray", fg="white")
     copy_button.pack()
 
 def remove_low_averages(data_list):
@@ -272,12 +292,9 @@ def remove_low_averages(data_list):
     return reduced_list
 
 
-def scrape_and_display(url, inty, remover):
+def scrape_and_display(url, inty):
     # Scrape the data
     data, cat = scrape_site(url, inty)
-    
-    if remover:
-        data = remove_low_averages(data)
 
     # Update the GUI with the sorted data
     window.after(0, display_results, data, url, cat)
@@ -288,13 +305,12 @@ def scrape_and_display(url, inty, remover):
 def handle_scrape():
     url = url_entry.get()
     inty = int(int_entry.get())
-    scrape_checked = reduction_var.get()
     output_text.delete(1.0, "end")  # Clear previous output
     output_text.insert("end", "Scraping in progress...\n")
     output_text.update()
 
     # Create a new thread for the scraping process
-    scrape_thread = threading.Thread(target=scrape_and_display, args=(url,inty, scrape_checked,))
+    scrape_thread = threading.Thread(target=scrape_and_display, args=(url,inty,))
     scrape_thread.start()
 
 
@@ -309,11 +325,6 @@ url_label.pack()
 url_entry = Entry(window, width = 90)
 url_entry.insert(0, "https://www.amazon.com/Best-Sellers-Clothing-Shoes-Jewelry-Womens-Swim-Pants/zgbs/fashion/23709657011/ref=zg_bs_nav_fashion_4_15835971")
 url_entry.pack()
-
-# Add a checkbox widget
-reduction_var = BooleanVar()
-reduction_checkbox = Checkbutton(window, text="Apply Reduction", variable=reduction_var, bg="black", fg="green")
-reduction_checkbox.pack()
 
 # Val Label and Entry
 int_label = Label(window, text="Enter cutoff integer(30+ ideal):", bg="black", fg="white")  # Set label colors
