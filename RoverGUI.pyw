@@ -72,18 +72,18 @@ def scrape_site(url, limiter):
             output_text.update()
             sleep (10)
 
-    #output_text.insert("end", "Getting last listings...\n")
-    #output_text.update()
-    #while m == True:
-    #    try:
-    #        driver.get(url+"/ref=zg_bs_pg_2?_encoding=UTF8&pg=2")
-    #        move()
-    #        HTML += str(driver.page_source.encode("utf-8"))
-    #        m = False
-    #    except Exception as e:
-    #        output_text.insert("end", 'Damaged, trying again...\n')
-    #        output_text.update()
-    #        sleep (10)
+    output_text.insert("end", "Getting last listings...\n")
+    output_text.update()
+    while m == True:
+        try:
+            driver.get(url+"/ref=zg_bs_pg_2?_encoding=UTF8&pg=2")
+            move()
+            HTML += str(driver.page_source.encode("utf-8"))
+            m = False
+        except Exception as e:
+            output_text.insert("end", 'Damaged, trying again...\n')
+            output_text.update()
+            sleep (10)
 
     driver.quit()
 
