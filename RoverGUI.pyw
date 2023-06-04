@@ -72,18 +72,18 @@ def scrape_site(url, limiter):
             output_text.update()
             sleep (10)
 
-    output_text.insert("end", "Getting last listings...\n")
-    output_text.update()
-    while m == True:
-        try:
-            driver.get(url+"/ref=zg_bs_pg_2?_encoding=UTF8&pg=2")
-            move()
-            HTML += str(driver.page_source.encode("utf-8"))
-            m = False
-        except Exception as e:
-            output_text.insert("end", 'Damaged, trying again...\n')
-            output_text.update()
-            sleep (10)
+    #output_text.insert("end", "Getting last listings...\n")
+    #output_text.update()
+    #while m == True:
+    #    try:
+    #        driver.get(url+"/ref=zg_bs_pg_2?_encoding=UTF8&pg=2")
+    #        move()
+    #        HTML += str(driver.page_source.encode("utf-8"))
+    #        m = False
+    #    except Exception as e:
+    #        output_text.insert("end", 'Damaged, trying again...\n')
+    #        output_text.update()
+    #        sleep (10)
 
     driver.quit()
 
@@ -184,7 +184,7 @@ def scrape_site(url, limiter):
                 except TypeError as te:
                     output_text.insert("end", 'Retrying page ' + str(i) + " from listing #" + str(num) + "\n")
                     output_text.update()
-                    sleep(10)
+                    sleep(10 + i)
                     l += 1
                 except AttributeError as huh:
                     passed = False
@@ -240,37 +240,45 @@ def display_results(data, urly, cat):
     treeview.heading("#7", text="Link")
     treeview.heading("#8", text="Title")
 
-    # Insert the data into the treeview
-    for row in data:
-        treeview.insert("", "end", values=row)
+    original_data = data
+    reduced_data = None
 
-    display_results.reduced_data = None
+    # Insert the data into the treeview
+    def insert_data(data):
+        for row in data:
+            treeview.insert("", "end", values=row)
+
+    insert_data(original_data)
+
     # Function to reduce rows
     def reduce_rows():
-        reduced_data = remove_low_averages(data)
-        treeview.delete(*treeview.get_children())  # Clear existing rows
-        for row in reduced_data:
-            treeview.insert("", "end", values=row)
-        # Update the reduced_data attribute of the display_results function
-        display_results.reduced_data = reduced_data
+        nonlocal reduced_data, original_data
 
+        if reduce_button.cget("text") == "Show Best":
+            reduced_data = remove_low_averages(original_data)
+            treeview.delete(*treeview.get_children())  # Clear existing rows
+            insert_data(reduced_data)
+            reduce_button.config(text="Show Original")
+        else:
+            treeview.delete(*treeview.get_children())  # Clear existing rows
+            insert_data(original_data)
+            reduce_button.config(text="Show Best")
 
     # Reduce Rows Button
-    reduce_button = Button(window, text="Reduce Rows", command=reduce_rows, bg="gray", fg="white")
+    reduce_button = Button(window, text="Show Best", command=reduce_rows, bg="gray", fg="white")
     reduce_button.pack()
 
     # Copy to Clipboard Button
     def copy_to_clipboard():
         clipboard_data = "%s\t %s\t %d results\n" % (cat, urly, len(data))
-        if display_results.reduced_data:
-            for row in display_results.reduced_data:
+        if reduce_button.cget("text") == "Show Original" and reduced_data is not None:
+            for row in reduced_data:
                 clipboard_data += "\t".join(map(str, row)) + "\n"
         else:
-            for row in data:
+            for row in original_data:
                 clipboard_data += "\t".join(map(str, row)) + "\n"
         window.clipboard_clear()
         window.clipboard_append(clipboard_data)
-
 
     copy_button = Button(window, text="Copy to Clipboard", command=lambda: copy_to_clipboard(), bg="gray", fg="white")
     copy_button.pack()
