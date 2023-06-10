@@ -1,16 +1,19 @@
+from time import sleep
+import os
+import re
+import threading
+
+from tkinter import *
+from tkinter.ttk import Treeview
+
 from selectorlib import Extractor
 import requests
-from time import sleep
-import re
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.chrome.options import Options
-import os
 import fake_useragent
-from tkinter import *
-from tkinter.ttk import Treeview
-import threading
+
 
 if __name__ == "__main__":
     curr_dir = os.path.dirname(os.path.realpath(__file__))
@@ -28,93 +31,89 @@ class ProgressBar:
         progress_label.config(text=progress_str)
         window.update_idletasks()
 
+def move(driver):
+    i = 0
+    sleep(5)
+    while i < 5:
+        el = driver.find_element(By.CLASS_NAME, "a-pagination")
+        action = ActionChains(driver)
+        action.move_to_element(el)
+        action.perform()
+        sleep(0.2)
+        i += 1
+        
+def get_page_source(driver, url, output_text):
+    m, html = False, ""
+    while not m:
+        try:
+            driver.get(url)
+            move(driver)
+            html = str(driver.page_source.encode("utf-8"))
+            m = True
+        except Exception:
+            output_text.insert("end", 'Damaged, trying again...\n')
+            output_text.update()
+            sleep(10)
+    return html
 
-def scrape_site(url, limiter):
+def scrape(url):
+    sleep(0.15)
+    e = Extractor.from_yaml_file('selectors.yml')
+
+    # Download the page using requests
+    try:
+        r = requests.get(url, headers=get_headers())
+    except Exception:
+        sleep(10)
+        print("issues with " + url)
+        return e.extract("")
+
+    # Pass the HTML of the page and create
+    return e.extract(r.text)
+
+def get_headers():
     ua = fake_useragent.UserAgent()
-    url = url.split('/ref=')[0]
-    # Uncomment if you would prefer to write in your best seller category URL
-    # url = 'https://www.amazon.com/Best-Sellers-Clothing-Shoes-Jewelry-Womens-Swim-Pants/zgbs/fashion/23709657011/ref=zg_bs_nav_fashion_4_15835971'
+    headers = {
+        "User-Agent": ua.random,
+        "Accept-Encoding": "gzip, deflate, br",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "DNT": "1",
+        "Connection": "close",
+        "Upgrade-Insecure-Requests": "1"
+    }
+    return headers
 
-    headers = {"User-Agent": ua.random, "Accept-Encoding": "gzip, deflate, br",
-               "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "DNT": "1",
-               "Connection": "close", "Upgrade-Insecure-Requests": "1"}
-
-    chrome_options, line, m = Options(), "", False
+def initialize_driver():
+    chrome_options = Options()
     chrome_options.add_argument('--log-level=3')
     chrome_options.add_experimental_option('excludeSwitches', ['enable-logging'])
-    chrome_options.add_argument('--ignore-certificate-errors')  # chrome_options.add_argument('--ignore-ssl-errors')
+    chrome_options.add_argument('--ignore-certificate-errors')
     chrome_options.add_argument("--headless")
-    driver = webdriver.Chrome(options=chrome_options)
+    return webdriver.Chrome(options=chrome_options)
+
+def bestseller_filing(HTML):
+        with open("bestseller.html","w+", encoding="utf-8") as f:
+            f.write(HTML)
+        with open('bestseller.html', "r", encoding="utf-8") as inFile, open('urls.txt', 'w+', encoding="utf-8") as outfile:
+            line = inFile.readline()
+            outfile.write('https://www.amazon.com/product-reviews')
+            outfile.write('?pageNumber=1&reviewerType=avp_only_reviews&sortBy=recent\nhttps://www.amazon.com/product-reviews'.join(re.findall('-reviews(.*?)ref', line)))
+            outfile.write('?pageNumber=1&reviewerType=avp_only_reviews&sortBy=recent\n')
+            return line
+            
+def scrape_site(output_text, url, limiter):
+    url = url.split('/ref=')[0]
+    driver = initialize_driver()
     actions = ActionChains(driver)
-
-    # move to bottom so it can get the rest of the page
-    def move():
-        i = 0
-        sleep(5)
-        while i < 5:
-            el = driver.find_element(By.CLASS_NAME, "a-pagination")
-            action = ActionChains(driver)
-            action.move_to_element(el)
-            action.perform()
-            sleep(0.2)
-            i += 1
-
     output_text.insert("end", "Getting first listings...\n")
     output_text.update()
-    while m == False:
-        try:
-            driver.get(url) #Something about get bothers it
-            move()
-            HTML = str(driver.page_source.encode("utf-8"))
-            m = True
-        except Exception as e:
-            output_text.insert("end", 'Damaged, trying again...\n')
-            output_text.update()
-            sleep (10)
-
+    HTML = get_page_source(driver, url, output_text)
     output_text.insert("end", "Getting last listings...\n")
     output_text.update()
-    while m == True:
-        try:
-            driver.get(url+"/ref=zg_bs_pg_2?_encoding=UTF8&pg=2")
-            move()
-            HTML += str(driver.page_source.encode("utf-8"))
-            m = False
-        except Exception as e:
-            output_text.insert("end", 'Damaged, trying again...\n')
-            output_text.update()
-            sleep (10)
-
+    HTML += get_page_source(driver, url+"/ref=zg_bs_pg_2?_encoding=UTF8&pg=2", output_text)
     driver.quit()
-
     #add the data you got to a file
-    with open("bestseller.html","w+", encoding="utf-8") as f:
-        f.write(HTML)
-
-    with open('bestseller.html', "r", encoding="utf-8") as inFile, open('urls.txt', 'w+', encoding="utf-8") as outfile:
-        line = inFile.readline()
-        outfile.write('https://www.amazon.com/product-reviews')
-        outfile.write('?pageNumber=1&reviewerType=avp_only_reviews&sortBy=recent\nhttps://www.amazon.com/product-reviews'.join(re.findall('-reviews(.*?)ref', line)))
-        outfile.write('?pageNumber=1&reviewerType=avp_only_reviews&sortBy=recent\n')
-
-    # Create an Extractor by reading from the YAML file
-
-    def scrape(url):  
-        sleep(0.25)
-        e = Extractor.from_yaml_file('selectors.yml')
-        headers = {"User-Agent": ua.random, "Accept-Encoding":"gzip, deflate", "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "DNT":"1","Upgrade-Insecure-Requests":"1", "allow_redirects":"False"}   
-
-        # Download the page using requests
-        try:
-            r = requests.get(url, headers=headers)
-        except Exception:
-            sleep(10)
-            print("issues with " + url)
-            return e.extract("")
-
-        # Pass the HTML of the page and create 
-        #print(re.sub(r'[^\x00-\x7F]+', '', r.text))
-        return e.extract(r.text)
+    line = bestseller_filing(HTML)
 
     with open("urls.txt",'r', encoding="utf-8") as urlList, open('finals.csv','w+', encoding="utf-8") as res:
         category = str(re.search('text-bold">Best Sellers in (.*?)</', line).group(1))
@@ -128,7 +127,6 @@ def scrape_site(url, limiter):
         num, data_list = 0, []
         total_urls = sum(1 for _ in urlList)
         urlList.seek(0)  # Reset file pointer to the beginning
-        
         progress_bar = ProgressBar(total_urls)
         
         for url in urlList.readlines():
@@ -136,7 +134,7 @@ def scrape_site(url, limiter):
             total, complete, i, l, half, lowest, passed , list= 0.0, 0.0, 1, 0, 0, 50.0, True, []
             fixed = url[:len(url) - 1]
             id = url[39:49]
-
+            
             while l < 10:
                 try:
                     first = scrape(fixed)["review_count"]
@@ -149,7 +147,7 @@ def scrape_site(url, limiter):
                     output_text.insert("end", 'Review Number Error\n')
                     output_text.update()
                     l += 1
-
+                    
             while i < 11:
                 if l > 9:
                     passed = False
@@ -163,12 +161,12 @@ def scrape_site(url, limiter):
                             list.append(float(r['rating'].split(' out of')[0]))
                             total += list[-1]
                             complete += list[-1]
-
+                            
                             if len(data['reviews']) < 10:
                                 i = 11
                                 passed = False
                                 break
-
+                            
                             if len(list) == 10:
                                 total -= list.pop(0)
                                 if total < limiter:
@@ -204,11 +202,8 @@ def scrape_site(url, limiter):
                 res.write(message)
                 data_list.append([num, result, complete / 100, half / 50, lowest, titStar, int(starNum), "https://www.amazon.com/dp/%s/"%id, title])
                 #result left
-            
             progress_bar.update_progress()
-
     # Sort the data by "Starnum" in descending order
-
     return sorted(data_list, key=lambda x: (x[6]), reverse=True), category
 
 
@@ -248,8 +243,6 @@ def display_results(data, urly, cat):
         for row in data:
             treeview.insert("", "end", values=row)
 
-    insert_data(original_data)
-
     # Function to reduce rows
     def reduce_rows():
         nonlocal reduced_data, original_data
@@ -264,10 +257,6 @@ def display_results(data, urly, cat):
             insert_data(original_data)
             reduce_button.config(text="Show Best")
 
-    # Reduce Rows Button
-    reduce_button = Button(window, text="Show Best", command=reduce_rows, bg="gray", fg="white")
-    reduce_button.pack()
-
     # Copy to Clipboard Button
     def copy_to_clipboard():
         clipboard_data = "%s\t %s\t %d results\n" % (cat, urly, len(data))
@@ -280,29 +269,40 @@ def display_results(data, urly, cat):
         window.clipboard_clear()
         window.clipboard_append(clipboard_data)
 
+    insert_data(original_data)
+    # Reduce Rows Button
+    reduce_button = Button(window, text="Show Best", command=reduce_rows, bg="gray", fg="white")
+    reduce_button.pack()
+
     copy_button = Button(window, text="Copy to Clipboard", command=lambda: copy_to_clipboard(), bg="gray", fg="white")
     copy_button.pack()
 
 def remove_low_averages(data_list):
     reduced_list = []
-    max_price = 0
-    max_quantity = 0
+    max_100 = 0
+    max_50 = 0
 
     for row in data_list:
-        price = row[2]
-        quantity = row[3]
+        curr_100 = row[2]
+        curr_50 = row[3]
+        passed = False
 
-        if price >= max_price and quantity >= max_quantity:
+        if curr_100 >= max_100:
+            passed = True
+            max_100 = curr_100
+            
+        if curr_50 >= max_50:
+            passed = True
+            max_50 = curr_50
+            
+        if passed:
             reduced_list.append(row)
-            max_price = price
-            max_quantity = quantity
 
     return reduced_list
 
-
 def scrape_and_display(url, inty):
     # Scrape the data
-    data, cat = scrape_site(url, inty)
+    data, cat = scrape_site(output_text, url, inty)
 
     # Update the GUI with the sorted data
     window.after(0, display_results, data, url, cat)
@@ -321,7 +321,6 @@ def handle_scrape():
     scrape_thread = threading.Thread(target=scrape_and_display, args=(url,inty,))
     scrape_thread.start()
 
-
 # Create the GUI window
 window = Tk()
 window.title("Web Scraper")
@@ -330,8 +329,8 @@ window.configure(bg="black")  # Set background color to black
 # URL Label and Entry
 url_label = Label(window, text="Enter the URL:", bg="black", fg="white")  # Set label colors
 url_label.pack()
-url_entry = Entry(window, width = 90)
-url_entry.insert(0, "https://www.amazon.com/Best-Sellers-Clothing-Shoes-Jewelry-Womens-Swim-Pants/zgbs/fashion/23709657011/ref=zg_bs_nav_fashion_4_15835971")
+url_entry = Entry(window, width = 100)
+url_entry.insert(0, "https://www.amazon.com/Best-Sellers-Pet-Supplies-Cat-Shampoos-Conditioners/zgbs/pet-supplies/2975274011/ref=zg_bs_nav_pet-supplies_3_3024148011")
 url_entry.pack()
 
 # Val Label and Entry
