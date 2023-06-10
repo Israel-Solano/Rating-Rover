@@ -1,124 +1,78 @@
-import tkinter as tk
-from tkinter.ttk import Treeview
+from tkinter import *
+from tkinter.ttk import Treeview, Progressbar
 from ScrapeSite import scrape_site
 import threading
 
 
-class WebScraperGUI:
-    def __init__(self, master):
-        self.master = master
-        master.title("Web Scraper")
+def display_results(data, urly, cat):
+    # Create the Treeview widget
+    treeview = Treeview(window)
+    treeview["columns"] = ("#0", "#1", "#2", "#3", "#4", "#5", "#6", "#7", "#8")
+    treeview.pack()
 
-        # Set up GUI elements
-        self.configure_style()
-        self.create_widgets()
+    # Adjust column widths
+    treeview.column("#0", width=50)  # Adjust the width of column 0
+    treeview.column("#1", width=50)  # Adjust the width of column 1
+    treeview.column("#2", width=50)  # Adjust the width of column 2
+    treeview.column("#3", width=50)  # Adjust the width of column 3
+    treeview.column("#4", width=50)  # Adjust the width of column 4
+    treeview.column("#5", width=50)  # Adjust the width of column 5
+    treeview.column("#6", width=50)  # Adjust the width of column 5
+    treeview.column("#7", width=50)  # Adjust the width of column 6 
+    treeview.column("#8", width=100) # Adjust the width of column 
 
-    def configure_style(self):
-        style = tk.ttk.Style()
-        style.theme_use('clam')  # Use 'clam' theme for a consistent dark mode appearance
-        style.configure('.', background='black', foreground='white')  # Set global background and foreground colors
-        style.configure('TButton', padding=6)  # Increase padding for buttons
-        style.map('TButton', background=[('active', 'gray')])  # Set button color on active state
+    # Define the columns
+    treeview.heading("#0", text="Ranking")
+    treeview.heading("#1", text="Price")
+    treeview.heading("#2", text="100 Ave")
+    treeview.heading("#3", text="50 Ave")
+    treeview.heading("#4", text="Lowest")
+    treeview.heading("#5", text="TitStar")
+    treeview.heading("#6", text="StarNum")
+    treeview.heading("#7", text="Link")
+    treeview.heading("#8", text="Title")
 
-    def create_widgets(self):
-        # URL Label and Entry
-        url_label = tk.Label(self.master, text="Enter the URL:")
-        url_label.pack()
-        self.url_entry = tk.Entry(self.master, width=100)
-        self.url_entry.insert(0, "https://www.amazon.com/Best-Sellers-Pet-Supplies-Cat-Shampoos-Conditioners/zgbs/pet-supplies/2975274011/ref=zg_bs_nav_pet-supplies_3_3024148011")
-        self.url_entry.pack()
+    original_data = data
+    reduced_data = None
 
-        # Cutoff Integer Label and Entry
-        int_label = tk.Label(self.master, text="Enter cutoff integer (30+ ideal):")
-        int_label.pack()
-        self.int_entry = tk.Entry(self.master, width=5)
-        self.int_entry.pack()
-        self.int_entry.insert(0, "30")
+    # Insert the data into the treeview
+    def insert_data(data):
+        for row in data:
+            treeview.insert("", "end", values=row)
 
-        # Scrape Button
-        self.scrape_button = tk.Button(self.master, text="Scrape", command=self.handle_scrape)
-        self.scrape_button.pack()
+    # Function to reduce rows
+    def reduce_rows():
+        nonlocal reduced_data, original_data
 
-        # Output Text
-        self.output_text = tk.Text(self.master, height=20, width=100, bg="black", fg="white")
-        self.output_text.pack()
+        if reduce_button.cget("text") == "Show Best":
+            reduced_data = remove_low_averages(original_data)
+            treeview.delete(*treeview.get_children())  # Clear existing rows
+            insert_data(reduced_data)
+            reduce_button.config(text="Show Original")
+        else:
+            treeview.delete(*treeview.get_children())  # Clear existing rows
+            insert_data(original_data)
+            reduce_button.config(text="Show Best")
 
-    def handle_scrape(self):
-        url = self.url_entry.get()
-        inty = int(self.int_entry.get())
-        self.output_text.delete(1.0, tk.END)  # Clear previous output
-        self.output_text.insert(tk.END, "Scraping in progress...\n")
+    # Copy to Clipboard Button
+    def copy_to_clipboard():
+        clipboard_data = "%s\t %s\t %d results\n" % (cat, urly, len(data))
+        if reduce_button.cget("text") == "Show Original" and reduced_data is not None:
+            for row in reduced_data:
+                clipboard_data += "\t".join(map(str, row)) + "\n"
+        else:
+            for row in original_data:
+                clipboard_data += "\t".join(map(str, row)) + "\n"
+        window.clipboard_clear()
+        window.clipboard_append(clipboard_data)
 
-        # Create a new thread for the scraping process
-        scrape_thread = threading.Thread(target=self.scrape_and_display, args=(url, inty))
-        scrape_thread.start()
+    insert_data(original_data)
+    # Reduce Rows Button
+    reduce_button = Button(window, text="Show Best", command=reduce_rows, bg="gray", fg="white")
+    reduce_button.pack()
 
-    def scrape_and_display(self, url, inty):
-        # Scrape the data
-        data, cat = scrape_site(self.output_text, url, inty)
-
-        # Update the GUI with the sorted data
-        self.master.after(0, self.display_results, data, url, cat)
-        self.master.after(0, self.output_text.insert, tk.END, "Scraping completed. Results displayed.\n")
-        self.master.after(0, self.output_text.update)
-
-    def display_results(self, data, urly, cat):
-        # Create the Treeview widget
-        treeview = Treeview(self.master, columns=("#0", "#1", "#2", "#3", "#4", "#5", "#6", "#7", "#8"), style='Treeview')
-        treeview.pack()
-
-        # Adjust column widths
-        for i in range(9):
-            treeview.column("#" + str(i), width=50 if i < 8 else 100)
-
-        # Define the columns
-        headings = ["Ranking", "Price", "100 Ave", "50 Ave", "Lowest", "TitStar", "StarNum", "Link", "Title"]
-        for i, heading in enumerate(headings):
-            treeview.heading("#" + str(i), text=heading)
-
-        original_data = data
-        reduced_data = None
-
-        # Insert the data into the treeview
-        def insert_data(data):
-            for row in data:
-                treeview.insert("", tk.END, values=row)
-
-        # Function to reduce rows
-        def reduce_rows():
-            nonlocal reduced_data, original_data
-
-            if reduce_button.cget("text") == "Show Best":
-                reduced_data = remove_low_averages(original_data)
-                treeview.delete(*treeview.get_children())  # Clear existing rows
-                insert_data(reduced_data)
-                reduce_button.config(text="Show Original")
-            else:
-                treeview.delete(*treeview.get_children())  # Clear existing rows
-                insert_data(original_data)
-                reduce_button.config(text="Show Best")
-
-        # Copy to Clipboard Button
-        def copy_to_clipboard():
-            clipboard_data = "%s\t %s\t %d results\n" % (cat, urly, len(data))
-            if reduce_button.cget("text") == "Show Original" and reduced_data is not None:
-                for row in reduced_data:
-                    clipboard_data += "\t".join(map(str, row)) + "\n"
-            else:
-                for row in original_data:
-                    clipboard_data += "\t".join(map(str, row)) + "\n"
-            self.master.clipboard_clear()
-            self.master.clipboard_append(clipboard_data)
-
-        insert_data(original_data)
-
-        # Reduce Rows Button
-        reduce_button = tk.Button(self.master, text="Show Best", command=reduce_rows, bg="gray", fg="white")
-        reduce_button.pack()
-
-        copy_button = tk.Button(self.master, text="Copy to Clipboard", command=copy_to_clipboard, bg="gray", fg="white")
-        copy_button.pack()
-
+    copy_button = Button(window, text="Copy to Clipboard", command=lambda: copy_to_clipboard(), bg="gray", fg="white")
+    copy_button.pack()
 
 def remove_low_averages(data_list):
     reduced_list = []
@@ -133,18 +87,81 @@ def remove_low_averages(data_list):
         if curr_100 >= max_100:
             passed = True
             max_100 = curr_100
-
+            
         if curr_50 >= max_50:
             passed = True
             max_50 = curr_50
-
+            
         if passed:
             reduced_list.append(row)
 
     return reduced_list
 
+def scrape_and_display(url, inty):
+    # Scrape the data
+    data, cat = scrape_site(output_text, url, inty)
 
-if __name__ == "__main__":
-    root = tk.Tk()
-    WebScraperGUI(root)
-    root.mainloop()
+    # Update the GUI with the sorted data
+    window.after(0, display_results, data, url, cat)
+    window.after(0, output_text.insert, "end", "Scraping completed. Results displayed.\n")
+    window.after(0, output_text.update)
+    
+        # Update progress bar
+    progress_var.set(100)
+
+# Function to handle button click
+def handle_scrape():
+    url = url_entry.get()
+    inty = int(int_entry.get())
+    output_text.delete(1.0, "end")  # Clear previous output
+    output_text.insert("end", "Scraping in progress...\n")
+    output_text.update()
+
+    # Create a new thread for the scraping process
+    progress_var = DoubleVar()
+    progress_bar = Progressbar(window, variable=progress_var, maximum=100)
+    progress_bar.pack()
+
+    # Create a new thread for the scraping process
+    scrape_thread = threading.Thread(target=scrape_and_display, args=(url,inty,))
+    scrape_thread.start()
+    
+    # Update progress bar periodically
+# Update progress bar periodically
+    def update_progress():
+        if scrape_thread.is_alive():
+            progress = progress_var.get()  # Get the progress value from the variable
+            progress_bar["value"] = progress  # Update the progress bar value
+            window.after(100, update_progress)
+
+
+
+# Create the GUI window
+window = Tk()
+window.title("Web Scraper")
+window.configure(bg="black")  # Set background color to black
+
+# URL Label and Entry
+url_label = Label(window, text="Enter the URL:", bg="black", fg="white")  # Set label colors
+url_label.pack()
+url_entry = Entry(window, width = 100)
+url_entry.insert(0, "https://www.amazon.com/Best-Sellers-Pet-Supplies-Cat-Shampoos-Conditioners/zgbs/pet-supplies/2975274011/ref=zg_bs_nav_pet-supplies_3_3024148011")
+url_entry.pack()
+
+# Val Label and Entry
+int_label = Label(window, text="Enter cutoff integer(30+ ideal):", bg="black", fg="white")  # Set label colors
+int_label.pack()
+int_entry = Entry(window, width = 5)
+int_entry.pack()
+int_entry.insert(0, "30")
+
+# Scrape Button
+scrape_button = Button(window, text="Scrape", command=handle_scrape, bg="white", fg="black")  # Set button colors
+scrape_button.pack()
+
+# Output Text
+output_text = Text(window, height=20, width=100, bg="black", fg="white")  # Set text widget colors
+output_text.pack()
+
+# Start the GUI event loop
+window.mainloop()
