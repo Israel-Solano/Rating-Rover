@@ -18,7 +18,30 @@ import fake_useragent
 if __name__ == "__main__":
     curr_dir = os.path.dirname(os.path.realpath(__file__))
     os.chdir(curr_dir)
-    
+
+def remove_low_averages(data_list):
+    reduced_list = []
+    max_100 = 0
+    max_50 = 0
+
+    for row in data_list:
+        curr_100 = (2.0 ** ((float(row[2]) - 4.0) * 10.0)) * row[6]
+        curr_50 = (2.0 ** ((float(row[3]) - 4.0) * 10.0)) * row[6]
+        passed = False
+
+        if curr_100 > max_100:
+            passed = True
+            max_100 = curr_100
+            
+        if curr_50 > max_50:
+            passed = True
+            max_50 = curr_50
+            
+        if passed:
+            reduced_list.append(row)
+
+    return reduced_list
+
 class ProgressBar:
     def __init__(self, total):
         self.progress = 0
@@ -34,12 +57,12 @@ class ProgressBar:
 def move(driver):
     i = 0
     sleep(5)
-    while i < 5:
+    while i < 6:
         el = driver.find_element(By.CLASS_NAME, "a-pagination")
         action = ActionChains(driver)
         action.move_to_element(el)
         action.perform()
-        sleep(0.2)
+        sleep(0.25)
         i += 1
         
 def get_page_source(driver, url, output_text):
@@ -277,28 +300,6 @@ def display_results(data, urly, cat):
     copy_button = Button(window, text="Copy to Clipboard", command=lambda: copy_to_clipboard(), bg="gray", fg="white")
     copy_button.pack()
 
-def remove_low_averages(data_list):
-    reduced_list = []
-    max_100 = 0
-    max_50 = 0
-
-    for row in data_list:
-        curr_100 = row[2]
-        curr_50 = row[3]
-        passed = False
-
-        if curr_100 >= max_100:
-            passed = True
-            max_100 = curr_100
-            
-        if curr_50 >= max_50:
-            passed = True
-            max_50 = curr_50
-            
-        if passed:
-            reduced_list.append(row)
-
-    return reduced_list
 
 def scrape_and_display(url, inty):
     # Scrape the data
