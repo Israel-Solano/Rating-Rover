@@ -17,20 +17,21 @@ ua = fake_useragent.UserAgent()
 # Create an Extractor by reading from the YAML file
 
 
-def scrape(url):
-    sleep(0.15)
-    headers = {"User-Agent": ua.random, "Accept-Encoding":"gzip, deflate", "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "DNT":"1","Upgrade-Insecure-Requests":"1", "allow_redirects":"False"}   
+def scrape(url):  
+    sleep(0.25)
     e = Extractor.from_yaml_file('selectors.yml')
+    headers = {"User-Agent": ua.random, "Accept-Encoding":"gzip, deflate", "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "DNT":"1","Upgrade-Insecure-Requests":"1", "allow_redirects":"False"}   
 
     # Download the page using requests
     try:
-        r = requests.get(url, headers)
+        r = requests.get(url, headers=headers)
     except Exception:
         sleep(10)
         print("issues with " + url)
         return e.extract("")
 
-    # Pass the HTML of the page and create
+    # Pass the HTML of the page and create 
+    #print(re.sub(r'[^\x00-\x7F]+', '', r.text))
     return e.extract(r.text)
 
 #, open('data.csv','w', encoding="utf-8") as outfile
@@ -47,6 +48,11 @@ with open("urls.txt",'r', encoding="utf-8") as urlList, open('finals.csv','w+', 
             id = re.search('/dp/(.*?)/', url).group(1)
             dp = True
             fixed = "https://www.amazon.com/product-reviews/" + id + "/?pageNumber=1&reviewerType=avp_only_reviews&sortBy=recent"
+            
+        elif "/gp/" in url: 
+            id = re.search('/gp/product/(.*?)/', url).group(1)
+            dp = True
+            fixed = "https://www.amazon.com/product-reviews/" + id + "/?pageNumber=1&reviewerType=avp_only_reviews&sortBy=recent"
         print("Downloading %s, "%id+str(num))
         
         while i < 11:
@@ -59,26 +65,22 @@ with open("urls.txt",'r', encoding="utf-8") as urlList, open('finals.csv','w+', 
                 # see dif print(len(data['reviews']))
                 if data:
                     for r in data['reviews']:
-                        print(".")
-                        list.append(float(r['rating'].split(' out of')[0]))
-                        print(".")
+                        list.append(float(r.split(' out of')[0]))
                         total += list[-1]
                         complete += list[-1]
-                        
                         if len(data['reviews']) < 10:
                             i = 11
                             passed = False
                             break
-                        
                         if len(list) == 10:
                             total -= list.pop(0)
-                            if total < limiter:
+                            if total < 10:
+                                print('Failed on page: ' + str(i))
                                 i = 11
                                 passed = False
                                 break
                             if total < lowest:
-                                lowest = total           
-                    print(".")
+                                lowest = total         
                     fixed = 'https://www.amazon.com'+data['next_page']
                     #print(fixed)
                     i += 1

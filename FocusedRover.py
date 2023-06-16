@@ -60,7 +60,6 @@ with open("urls.txt",'r', encoding="utf-8") as urlList, open('finals.csv','w+', 
                 first = scrape(fixed)["review_count"]
                 checkNum = str(re.search(', (.*?) with', first).group(1)).replace(",", "")
                 if int(checkNum) < 101:
-                    print('Only ' + checkNum+' reviews')
                     passed = False
                     i = 11
                 break
@@ -78,7 +77,7 @@ with open("urls.txt",'r', encoding="utf-8") as urlList, open('finals.csv','w+', 
                 # see dif print(len(data['reviews']))
                 if data:
                     for r in data['reviews']:
-                        list.append(float(r['rating'].split(' out of')[0]))
+                        list.append(float(r.split(' out of')[0]))
                         total += list[-1]
                         complete += list[-1]
 
@@ -106,6 +105,7 @@ with open("urls.txt",'r', encoding="utf-8") as urlList, open('finals.csv','w+', 
                 l += 1
             except AttributeError as huh:
                 passed = False
+                
                 print('Too few on page ' + str(i))
                 break
             if(i == 6):

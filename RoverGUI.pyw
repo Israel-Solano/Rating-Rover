@@ -102,7 +102,8 @@ def get_headers():
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "DNT": "1",
         "Connection": "close",
-        "Upgrade-Insecure-Requests": "1"
+        "Upgrade-Insecure-Requests": "1",
+        "allow_redirects":"False"
     }
     return headers
 
@@ -179,12 +180,14 @@ def scrape_site(output_text, url, limiter):
                 data = scrape(fixed)
                 try:
                     # see dif print(len(data['reviews']))
+
+                    title = re.sub(r'[^\x00-\x7F]+', '', data["product_title"]).replace(",","")
                     if data:
                         for r in data['reviews']:
-                            list.append(float(r['rating'].split(' out of')[0]))
+                            list.append(float(r.split(' out of')[0]))
                             total += list[-1]
                             complete += list[-1]
-                            
+    
                             if len(data['reviews']) < 10:
                                 i = 11
                                 passed = False
@@ -197,7 +200,7 @@ def scrape_site(output_text, url, limiter):
                                     passed = False
                                     break
                                 if total < lowest:
-                                    lowest = total        
+                                    lowest = total       
                         fixed = "https://www.amazon.com/product-reviews/" + id + "/?pageNumber=" + \
                             str(i + 1) + "&reviewerType=avp_only_reviews&sortBy=recent"
                         #print(fixed)
@@ -214,7 +217,6 @@ def scrape_site(output_text, url, limiter):
                     half = complete    
             if passed:
                 #possibly add .split('</span></div></a></div><div class="zg-mlt-list-type aok-hidden">')[-1]
-                title = re.sub(r'[^\x00-\x7F]+', '', data["product_title"]).replace(",","")
                 titStar = data["rating"].split(' out of')[0]
                 starNum = data["starNum"].split(' global ratings')[0].replace(",","")
                 try:
