@@ -11,9 +11,6 @@ reviews:
     css: 'i[data-hook="review-star-rating"] span.a-icon-alt'
     multiple: true
     type: Text
-next_page:
-    css: 'li.a-last a'
-    type: Link
 review_count:
     css: 'div[data-hook="cr-filter-info-review-rating-count"]'
     type: Text

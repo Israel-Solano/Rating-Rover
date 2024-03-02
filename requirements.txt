@@ -1,4 +1,6 @@
 selenium
-requests
 selectorlib
 fake-useragent
+webdriver_manager
+
+requests
